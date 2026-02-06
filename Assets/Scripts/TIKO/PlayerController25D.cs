@@ -12,9 +12,9 @@ public class PlayerController25D : MonoBehaviour
 
     [Header("Movement Tilt Effect")]
     [SerializeField] bool enableMovementTilt = true;
-    [SerializeField] float maxTiltAngle = 8f;        // cât de mult se apleacă (grade)
-    [SerializeField] float tiltSpeed = 10f;          // cât de rapid se aplică tilt-ul
-    [SerializeField] Transform visualTransform;      // obiectul care se va înclina (mesh/model)
+    [SerializeField] float maxTiltAngle = 8f;
+    [SerializeField] float tiltSpeed = 10f;
+    [SerializeField] Transform visualTransform;
 
     [Header("Gravity / Jump")]
     [SerializeField] bool enableJump = true;
@@ -23,8 +23,18 @@ public class PlayerController25D : MonoBehaviour
     [SerializeField] int extraJumps = 1;
 
     [Header("Crouch/Hide")]
-    [SerializeField] bool enableCrouch = false;
+    [SerializeField] bool enableCrouch = true;
+    [SerializeField] KeyCode crouchKey = KeyCode.LeftShift;
     [SerializeField] float crouchSpeedMultiplier = 0.5f;
+    [SerializeField] float crouchTiltMultiplier = 0.3f;
+    [SerializeField] Transform bodyTransform;
+    [SerializeField] float crouchBodyOffset = -0.3f;
+    [SerializeField] float crouchTransitionSpeed = 8f;
+    
+    [Header("Crouch Tiptoeing Effect")]
+    [SerializeField] bool enableTiptoeEffect = true;
+    [SerializeField] float tiptoeSwayAngle = 5f;
+    [SerializeField] float tiptoeSpeed = 8f;
 
     CharacterController cc;
 
@@ -35,26 +45,48 @@ public class PlayerController25D : MonoBehaviour
     bool crouchHeld;
     int jumpsLeft;
 
-    // Pentru tilt effect
     float currentTiltAngle = 0f;
+    float currentBodyYOffset = 0f;
+    float tiptoeTimer = 0f;
 
     void Awake()
     {
         cc = GetComponent<CharacterController>();
         jumpsLeft = extraJumps;
 
-        // Dacă nu e setat manual, încearcă să găsească primul copil
         if (visualTransform == null)
         {
             if (transform.childCount > 0)
                 visualTransform = transform.GetChild(0);
             else
-                visualTransform = transform; // fallback la root
+                visualTransform = transform;
+        }
+
+        if (bodyTransform == null)
+        {
+            bodyTransform = visualTransform.Find("Body");
+            if (bodyTransform == null)
+            {
+                Debug.LogWarning("Body Transform not found!");
+            }
         }
     }
 
     void Update()
     {
+        // === CROUCH INPUT - verificare manuală ===
+        if (enableCrouch)
+        {
+            bool wasCrouching = crouchHeld;
+            crouchHeld = Input.GetKey(crouchKey);
+            
+            // Debug când se schimbă starea
+            if (wasCrouching != crouchHeld)
+            {
+                Debug.Log($"Crouch state changed: {crouchHeld}");
+            }
+        }
+
         // 1) Direcție mișcare în plan XZ din WASD
         Vector3 desiredDir = new Vector3(moveInput.x, 0f, moveInput.y);
         if (desiredDir.sqrMagnitude > 1f) desiredDir.Normalize();
@@ -82,7 +114,7 @@ public class PlayerController25D : MonoBehaviour
         motion.y = verticalVelocity;
         cc.Move(motion * Time.deltaTime);
 
-        // 5) Rotire spre direcția de mers (DOAR ROOT)
+        // 5) Rotire spre direcția de mers
         if (rotateToMoveDirection && desiredDir.sqrMagnitude > 0.001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(desiredDir, Vector3.up);
@@ -93,64 +125,92 @@ public class PlayerController25D : MonoBehaviour
             );
         }
 
-        // 6) TILT EFFECT - aplecă pe spate când se mișcă (DOAR VISUAL)
+        // 6) EFECTE VIZUALE
         ApplyMovementTilt();
+        ApplyCrouchBodyOffset();
+        ApplyTiptoeEffect();
     }
 
     void ApplyMovementTilt()
     {
         if (!enableMovementTilt || visualTransform == null) return;
 
-        // Calculează viteza de mișcare ca procent din viteza maximă
         float currentSpeed = new Vector2(horizontalVelocity.x, horizontalVelocity.z).magnitude;
         float speedPercent = Mathf.Clamp01(currentSpeed / moveSpeed);
 
-        // Target tilt bazat pe viteză (se apleacă pe spate când merge)
-        float targetTilt = -maxTiltAngle * speedPercent; // negativ = spate
+        float tiltMultiplier = crouchHeld ? crouchTiltMultiplier : 1f;
+        float targetTilt = -maxTiltAngle * speedPercent * tiltMultiplier;
 
-        // Dacă playerul sare, reduce tilt-ul
         if (!cc.isGrounded)
         {
-            targetTilt *= 0.3f; // în aer se întoarce mai spre poziție normală
+            targetTilt *= 0.3f;
         }
 
-        // Smooth lerp către target tilt
         currentTiltAngle = Mathf.Lerp(currentTiltAngle, targetTilt, tiltSpeed * Time.deltaTime);
-
-        // Aplică rotația DOAR pe axa X (pitch) local - păstrează Y și Z
         visualTransform.localRotation = Quaternion.Euler(currentTiltAngle, 0f, 0f);
     }
 
-    // === INPUT CALLBACKS ===
+    void ApplyCrouchBodyOffset()
+    {
+        if (!enableCrouch || bodyTransform == null) return;
 
+        float targetYOffset = crouchHeld ? crouchBodyOffset : 0f;
+        currentBodyYOffset = Mathf.Lerp(currentBodyYOffset, targetYOffset, crouchTransitionSpeed * Time.deltaTime);
+
+        Vector3 bodyPos = bodyTransform.localPosition;
+        bodyPos.y = currentBodyYOffset;
+        bodyTransform.localPosition = bodyPos;
+    }
+
+    void ApplyTiptoeEffect()
+    {
+        if (!enableTiptoeEffect || !crouchHeld || bodyTransform == null) return;
+
+        float currentSpeed = new Vector2(horizontalVelocity.x, horizontalVelocity.z).magnitude;
+        
+        if (currentSpeed > 0.1f && cc.isGrounded)
+        {
+            tiptoeTimer += Time.deltaTime * tiptoeSpeed;
+            float swayAngle = Mathf.Sin(tiptoeTimer) * tiptoeSwayAngle;
+
+            Vector3 bodyEuler = bodyTransform.localEulerAngles;
+            bodyEuler.y = swayAngle;
+            bodyTransform.localRotation = Quaternion.Euler(bodyEuler.x, bodyEuler.y, bodyEuler.z);
+        }
+        else
+        {
+            Vector3 bodyEuler = bodyTransform.localEulerAngles;
+            bodyEuler.y = Mathf.Lerp(bodyEuler.y, 0f, 10f * Time.deltaTime);
+            bodyTransform.localRotation = Quaternion.Euler(bodyEuler.x, bodyEuler.y, bodyEuler.z);
+            tiptoeTimer = 0f;
+        }
+    }
+
+    // === INPUT CALLBACKS (doar pentru Move și Jump) ===
+    
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
-    }
-
-    public void OnCrouch(InputValue value)
-    {
-        if (!enableCrouch) return;
-        crouchHeld = value.isPressed;
     }
 
     public void OnJump(InputValue value)
     {
         if (!enableJump) return;
         if (!value.isPressed) return;
+        if (crouchHeld) return;
 
-        // Ground jump
         if (cc.isGrounded)
         {
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
             return;
         }
 
-        // Air jump (double jump)
         if (jumpsLeft > 0)
         {
             jumpsLeft--;
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
     }
+    
+    // NU MAI AVEM OnCrouch - am șters complet callback-ul
 }

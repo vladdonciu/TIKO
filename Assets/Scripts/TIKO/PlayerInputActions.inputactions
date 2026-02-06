@@ -78,7 +78,7 @@
                 {
                     "name": "",
                     "id": "e5a32c1a-8584-44e5-9964-e0108e0d43d0",
-                    "path": "",
+                    "path": "<Keyboard>/shift",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -89,7 +89,7 @@
                 {
                     "name": "",
                     "id": "fce525e0-f58c-491f-9721-fb1dec9a8592",
-                    "path": "",
+                    "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
