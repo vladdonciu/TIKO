@@ -49,6 +49,8 @@ public class PlayerController25D : MonoBehaviour
     float currentBodyYOffset = 0f;
     float tiptoeTimer = 0f;
 
+    Interactable currentInteractable;
+
     void Awake()
     {
         cc = GetComponent<CharacterController>();
@@ -129,6 +131,8 @@ public class PlayerController25D : MonoBehaviour
         ApplyMovementTilt();
         ApplyCrouchBodyOffset();
         ApplyTiptoeEffect();
+        // 7) Detectare obiecte interactabile
+        DetectInteractables();
     }
 
     void ApplyMovementTilt()
@@ -211,6 +215,39 @@ public class PlayerController25D : MonoBehaviour
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
     }
+
+    void DetectInteractables()
+    {
+    // Caută obiecte interactabile în apropiere
+    Interactable[] interactables = FindObjectsOfType<Interactable>();
     
-    // NU MAI AVEM OnCrouch - am șters complet callback-ul
+    Interactable closest = null;
+    float closestDistance = float.MaxValue;
+    
+    foreach (Interactable interactable in interactables)
+    {
+        if (interactable.IsPlayerInRange())
+        {
+            float distance = Vector3.Distance(transform.position, interactable.transform.position);
+            if (distance < closestDistance)
+            {
+                closest = interactable;
+                closestDistance = distance;
+            }
+        }
+    }
+    
+    currentInteractable = closest;
+
+    }
+    
+    public void OnInteract(InputValue value)
+    {
+        if (!value.isPressed) return;
+        
+        if (currentInteractable != null)
+        {
+            currentInteractable.Interact();
+        }
+    }
 }
