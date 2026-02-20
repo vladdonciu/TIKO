@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2760972df86154fe78b19f8d9fd2a52f, type: 3}
+  m_Name: Emotion_Neutral
+  m_EditorClassIdentifier: Assembly-CSharp::RobotEmotion
+  emotionName: Neutral
+  eyeWidth: 0.12
+  eyeHeight: 0.3
+  cornerRadius: 0.3
+  eyeSpacing: 0.15
+  eyeVerticalOffset: 0.05
+  leftEyeRotation: 0
+  rightEyeRotation: 0
+  leftEyeSquashX: 1
+  leftEyeSquashY: 1
+  rightEyeSquashX: 1
+  rightEyeSquashY: 1
+  eyeEmissionColor: {r: 0, g: 3.1372552, b: 4, a: 1}
+  screenEmissionColor: {r: 0.1, g: 0.16, b: 0.23529412, a: 1}
+  screenBaseColor: {r: 0.02, g: 0.02, b: 0.04, a: 1}
+  glowSoftness: 0.04
+  glowIntensity: 1
+  scanlineIntensity: 0.08
+  scanlineCount: 180
+  scanlineSpeed: 0.8
+  screenFlicker: 0.02
+  screenNoise: 0.015
+  vignetteIntensity: 0.3
+  lookInfluence: 1
+  maxLookOffset: 0.05
+  blinkInterval: 3
+  blinkDuration: 0.15
