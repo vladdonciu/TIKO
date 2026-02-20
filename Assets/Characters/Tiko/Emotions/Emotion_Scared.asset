@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2760972df86154fe78b19f8d9fd2a52f, type: 3}
+  m_Name: Emotion_Scared
+  m_EditorClassIdentifier: Assembly-CSharp::RobotEmotion
+  emotionName: Scared
+  eyeWidth: 0.16
+  eyeHeight: 0.48
+  cornerRadius: 0.2
+  eyeSpacing: 0.18
+  eyeVerticalOffset: 0.03
+  leftEyeRotation: -5
+  rightEyeRotation: 5
+  leftEyeSquashX: 1
+  leftEyeSquashY: 1.2
+  rightEyeSquashX: 1
+  rightEyeSquashY: 1.2
+  eyeEmissionColor: {r: 5.6568546, g: 2.2183745, b: 1.7746996, a: 1}
+  screenEmissionColor: {r: 0.15686275, g: 0.078431375, b: 0.078431375, a: 1}
+  screenBaseColor: {r: 0.03137255, g: 0.011764706, b: 0.011764706, a: 1}
+  glowSoftness: 0.08
+  glowIntensity: 2
+  scanlineIntensity: 0.12
+  scanlineCount: 180
+  scanlineSpeed: 2
+  screenFlicker: 0.08
+  screenNoise: 0.04
+  vignetteIntensity: 0.5
+  lookInfluence: 1
+  maxLookOffset: 0.04
+  blinkInterval: 1.5
+  blinkDuration: 0.08
