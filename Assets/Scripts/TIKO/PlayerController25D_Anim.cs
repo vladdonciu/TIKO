@@ -147,10 +147,10 @@ public class PlayerController25D_Anim : MonoBehaviour
             animator.SetBool(CrouchHash, crouchHeld);
 
             // debug: vezi ce setezi
-            if (debugParams && Time.frameCount % 60 == 0) // o dată pe secundă
-            {
-                Debug.Log($"[TIKO] Speed={speed01:F2} | Grounded={grounded} | Crouch={crouchHeld}");
-            }
+            // if (debugParams && Time.frameCount % 60 == 0) // o dată pe secundă
+            // {
+            //     Debug.Log($"[TIKO] Speed={speed01:F2} | Grounded={grounded} | Crouch={crouchHeld}");
+            // }
 
             TickIdleStateMachine(grounded, speed01);
         }
