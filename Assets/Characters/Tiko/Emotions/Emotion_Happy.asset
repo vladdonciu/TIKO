@@ -24,8 +24,8 @@ MonoBehaviour:
   leftEyeSquashY: 0.8
   rightEyeSquashX: 1.2
   rightEyeSquashY: 0.8
-  eyeEmissionColor: {r: 2.2183745, g: 5.6568546, b: 1.3310245, a: 1}
-  screenEmissionColor: {r: 0.11764706, g: 0.19607843, b: 0.078431375, a: 1}
+  eyeEmissionColor: {r: 0, g: 4.4425564, b: 5.6568546, a: 1}
+  screenEmissionColor: {r: 0.101960786, g: 0.16078432, b: 0.23529412, a: 1}
   screenBaseColor: {r: 0.02, g: 0.03137255, b: 0.011764706, a: 1}
   glowSoftness: 0.06
   glowIntensity: 1.8
