@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: c8f71ece1f1424eecb9b167e07c71a2c
+guid: 85e51c823e89f478b89f323257b5dce6
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -8,7 +8,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: FPANEL03
-    second: {fileID: 2100000, guid: f34dd1a718c3844378d4b58ac11672af, type: 2}
+    second: {fileID: 2100000, guid: da253d158baa3459aae4d53876f30c54, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

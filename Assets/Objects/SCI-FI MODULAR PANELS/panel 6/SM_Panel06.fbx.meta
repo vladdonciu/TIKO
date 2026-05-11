@@ -1,9 +1,14 @@
 fileFormatVersion: 2
-guid: 0f8783ef834094b98830e2f2da3aee0f
+guid: 47e71041db73745b8984d5894a5ea89f
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PANEL06
+    second: {fileID: 2100000, guid: 56082d110169b4086980f9c493a3f09b, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

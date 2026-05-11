@@ -30,11 +30,11 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 6f9d72b5d2f9c49f08005f0fc47bf23a, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7b881916c01254a31bc3710d3df9e866, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: b4e1564d056bb47c5b86dac16fed87bc, type: 3}
+        m_Texture: {fileID: 2800000, guid: 266279ba9aaa448ebb0bb041853da233, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -50,19 +50,19 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
-        m_Texture: {fileID: 2800000, guid: 7f6533f1bb2354c798ea3470da03c890, type: 3}
+        m_Texture: {fileID: 2800000, guid: 798996a4afa77447cbc38ad989bfcd3b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 6f9d72b5d2f9c49f08005f0fc47bf23a, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7b881916c01254a31bc3710d3df9e866, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
-        m_Texture: {fileID: 2800000, guid: 4b134af43dfda4332a0e2d13f1245f83, type: 3}
+        m_Texture: {fileID: 2800000, guid: 0e5fe32952c6945bb9f658edc1d50a5e, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
-        m_Texture: {fileID: 2800000, guid: ab1d87a59515d4e9492795dadae5abcc, type: 3}
+        m_Texture: {fileID: 2800000, guid: fa1dea97a19c7476cb321106a4ad3908, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
@@ -126,7 +126,7 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!114 &7352724256127623147
+--- !u!114 &775619498056184637
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}

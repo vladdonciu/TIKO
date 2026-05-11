@@ -1,9 +1,14 @@
 fileFormatVersion: 2
-guid: 5fcbdf94a23d445eaabae916fd3c6009
+guid: 1e07c35f38c3e4c618ebae5f6a9c4c6e
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RAMP
+    second: {fileID: 2100000, guid: d75ec3746bd1446c4b0cd3eddae16a0c, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

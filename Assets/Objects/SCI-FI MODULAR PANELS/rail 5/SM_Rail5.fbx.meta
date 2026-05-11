@@ -1,9 +1,14 @@
 fileFormatVersion: 2
-guid: 188350d6bb39e4c6083744d92eec2cc9
+guid: 1c7370e2031ec4f2c9b2cd77718eebb5
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RAIL5
+    second: {fileID: 2100000, guid: 4dfd9fbe5b9cb428988a902777787679, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

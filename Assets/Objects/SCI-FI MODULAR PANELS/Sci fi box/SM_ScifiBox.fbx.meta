@@ -1,9 +1,14 @@
 fileFormatVersion: 2
-guid: e7898db3d4c884a289410fff86753ab6
+guid: 64d13bcd84faf4e7da53e4826242922e
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SCIFIBOX
+    second: {fileID: 2100000, guid: 2652fed80e0584f38928fcc6b87c6a2f, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
