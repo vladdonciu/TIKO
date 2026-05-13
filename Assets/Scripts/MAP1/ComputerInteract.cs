@@ -5,8 +5,8 @@ public class ComputerInteract : MonoBehaviour
 {
     [Header("Referinte")]
     public DoorController doorController;
-    public GameObject redLight;
-    public GameObject greenLight;
+    public GameObject[] redLights;    // ← array
+    public GameObject[] greenLights;  // ← array
 
     [Header("Settings")]
     public float interactDistance = 3f;
@@ -19,10 +19,8 @@ public class ComputerInteract : MonoBehaviour
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
-
-        // Bec verde ascuns la start
-        if (greenLight) greenLight.SetActive(false);
-        if (redLight)   redLight.SetActive(true);
+        SetLights(redLights, true);
+        SetLights(greenLights, false);
     }
 
     void Update()
@@ -40,25 +38,28 @@ public class ComputerInteract : MonoBehaviour
     {
         isActivated = true;
 
-        // Bec rosu → verde
-        if (redLight)   redLight.SetActive(false);
-        if (greenLight) greenLight.SetActive(true);
+        SetLights(redLights, false);
+        SetLights(greenLights, true);
 
-        // Paseaza referintele la DoorController
-        doorController.redLight   = redLight;
-        doorController.greenLight = greenLight;
+        // ❌ Șterge astea două linii
+        // doorController.redLights   = redLights;
+        // doorController.greenLights = greenLights;
 
-        // Porneste usile
         doorController.OpenDoors();
-
-        // Permite reactivarea dupa ciclu complet
         StartCoroutine(ResetAfterCycle());
+    }
+
+    private void SetLights(GameObject[] lights, bool state)
+    {
+        if (lights == null) return;
+        foreach (var light in lights)
+            if (light) light.SetActive(state);
     }
 
     private IEnumerator ResetAfterCycle()
     {
-        float totalTime = doorController.stayOpenDuration 
-                        + doorController.slideDuration 
+        float totalTime = doorController.stayOpenDuration
+                        + doorController.slideDuration
                         + 0.2f;
         yield return new WaitForSeconds(totalTime);
         isActivated = false;
