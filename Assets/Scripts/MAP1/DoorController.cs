@@ -18,9 +18,9 @@ public class DoorController : MonoBehaviour
     public AudioClip openSound;
     public AudioClip closeSound;
 
-    [Header("Light Indicator")]
-    public GameObject redLight;
-    public GameObject greenLight;
+    [Header("Light Indicators")]
+    public GameObject[] redLights;    // ← array
+    public GameObject[] greenLights;  // ← array
 
     private Vector3 leftStart, rightStart;
     private Vector3 leftEnd, rightEnd;
@@ -28,14 +28,16 @@ public class DoorController : MonoBehaviour
 
     void Start()
     {
-        leftStart = leftDoor.position;
+        // ✅ Salvează poziția CURENTĂ ca start
+        leftStart  = leftDoor.position;
         rightStart = rightDoor.position;
 
-        // Schimba axa dupa nevoie: forward/back = Z, right/left = X
-        leftEnd = leftStart + Vector3.forward * slideDistance;
-        rightEnd = rightStart + Vector3.back * slideDistance;
-    }
+        leftEnd  = leftStart  + leftDoor.right  * -slideDistance;
+        rightEnd = rightStart + rightDoor.right *  slideDistance;
 
+        SetLights(redLights, true);
+        SetLights(greenLights, false);
+    }
     public void OpenDoors()
     {
         StartCoroutine(OpenThenClose());
@@ -43,18 +45,18 @@ public class DoorController : MonoBehaviour
 
     private IEnumerator OpenThenClose()
     {
-        // --- DESCHIDERE ---
         doorsAreOpen = true;
+
+        SetLights(redLights, false);
+        SetLights(greenLights, true);
 
         PlaySound(leftDoorAudio, openSound);
         PlaySound(rightDoorAudio, openSound);
         StartCoroutine(SlideDoors(leftDoor, leftStart, leftEnd));
         StartCoroutine(SlideDoors(rightDoor, rightStart, rightEnd));
 
-        // --- ASTEAPTA 10 SEC ---
         yield return new WaitForSeconds(stayOpenDuration);
 
-        // --- INCHIDERE ---
         doorsAreOpen = false;
 
         PlaySound(leftDoorAudio, closeSound);
@@ -62,18 +64,20 @@ public class DoorController : MonoBehaviour
         StartCoroutine(SlideDoors(leftDoor, leftEnd, leftStart));
         StartCoroutine(SlideDoors(rightDoor, rightEnd, rightStart));
 
-        // Asteapta sa termine animatia de inchidere
         yield return new WaitForSeconds(slideDuration);
 
-        // --- REVINE LA BEC ROSU ---
-        if (greenLight) greenLight.SetActive(false);
-        if (redLight)   redLight.SetActive(true);
+        SetLights(redLights, true);
+        SetLights(greenLights, false);
     }
 
-    public bool AreDoorOpen()
+    private void SetLights(GameObject[] lights, bool state)
     {
-        return doorsAreOpen;
+        if (lights == null) return;
+        foreach (var light in lights)
+            if (light) light.SetActive(state);
     }
+
+    public bool AreDoorOpen() => doorsAreOpen;
 
     private IEnumerator SlideDoors(Transform door, Vector3 from, Vector3 to)
     {
@@ -82,7 +86,7 @@ public class DoorController : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = elapsed / slideDuration;
-            t = t * t * (3f - 2f * t); // smoothstep
+            t = t * t * (3f - 2f * t);
             door.position = Vector3.Lerp(from, to, t);
             yield return null;
         }

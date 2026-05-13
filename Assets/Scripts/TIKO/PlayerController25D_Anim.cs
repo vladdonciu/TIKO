@@ -31,7 +31,7 @@ public class PlayerController25D_Anim : MonoBehaviour
     [Header("Idle Random (State Machine)")]
     [SerializeField] private bool enableIdleRandom = true;
     [SerializeField] private Vector2 idleChangeInterval = new Vector2(3f, 7f);
-    [SerializeField] private float idleSpeedEpsilon = 0.1f; // important: pragul pentru idle
+    [SerializeField] private float idleSpeedEpsilon = 0.1f;
 
     [Header("Wheel Spin")]
     [SerializeField] private float wheelRadius = 0.2f;
@@ -43,30 +43,25 @@ public class PlayerController25D_Anim : MonoBehaviour
     [SerializeField] private bool crouchReleaseFailsafe = true;
 
     private CharacterController cc;
-
     private Vector2 moveInput;
     private Vector3 horizontalVelocity;
     private float verticalVelocity;
-
     private bool crouchHeld;
     private int jumpsLeft;
-
     private float tiltAngle;
-
     private float idleTimer;
     private float nextIdleChange;
     private int lastIdleSlot = -1;
-
     private Quaternion wheelInitialLocalRotation;
     private float wheelSpinAngleAccum;
+    private MovingPlatform currentPlatform;
 
-    // Animator params [web:225]
-    private static readonly int SpeedHash      = Animator.StringToHash("Speed");
-    private static readonly int GroundedHash   = Animator.StringToHash("IsGrounded");
-    private static readonly int CrouchHash     = Animator.StringToHash("IsCrouch");
-    private static readonly int JumpHash       = Animator.StringToHash("Jump");
-    private static readonly int IdleSlotHash   = Animator.StringToHash("IdleSlot");
-    private static readonly int IdleNextHash   = Animator.StringToHash("IdleNext");
+    private static readonly int SpeedHash    = Animator.StringToHash("Speed");
+    private static readonly int GroundedHash = Animator.StringToHash("IsGrounded");
+    private static readonly int CrouchHash   = Animator.StringToHash("IsCrouch");
+    private static readonly int JumpHash     = Animator.StringToHash("Jump");
+    private static readonly int IdleSlotHash = Animator.StringToHash("IdleSlot");
+    private static readonly int IdleNextHash = Animator.StringToHash("IdleNext");
 
     private void Awake()
     {
@@ -75,7 +70,6 @@ public class PlayerController25D_Anim : MonoBehaviour
 
         if (!animator) animator = GetComponentInChildren<Animator>();
         if (!visualTransform) visualTransform = animator ? animator.transform : transform;
-
         if (wheel) wheelInitialLocalRotation = wheel.localRotation;
 
         nextIdleChange = Random.Range(idleChangeInterval.x, idleChangeInterval.y);
@@ -85,16 +79,22 @@ public class PlayerController25D_Anim : MonoBehaviour
     {
         Debug.Log($"[TIKO] AnimatorRef={(animator ? animator.name : "NULL")}");
         Debug.Log($"[TIKO] Controller={(animator && animator.runtimeAnimatorController ? animator.runtimeAnimatorController.name : "NULL")}");
-        
+
         if (!animator || !animator.runtimeAnimatorController)
-        {
             Debug.LogError("[TIKO] Animator sau Controller lipsă! Animațiile nu vor merge.");
-        }
     }
 
     private void Update()
     {
-        // failsafe crouch (tastatură)
+        // ✅ Salvează Velocity din frame precedent ÎNAINTE de reset
+        Vector3 platformDelta = Vector3.zero;
+        if (currentPlatform != null)
+            platformDelta = currentPlatform.Velocity * Time.deltaTime;
+
+        // ✅ Reset imediat după
+        currentPlatform = null;
+
+        // failsafe crouch
         if (crouchReleaseFailsafe && crouchHeld && Keyboard.current != null)
         {
             if (!Keyboard.current.leftShiftKey.isPressed)
@@ -124,10 +124,9 @@ public class PlayerController25D_Anim : MonoBehaviour
             verticalVelocity += gravity * Time.deltaTime;
         }
 
-        // move [web:92]
-        Vector3 motion = horizontalVelocity;
-        motion.y = verticalVelocity;
-        cc.Move(motion * Time.deltaTime);
+        // motion
+        Vector3 motion = (horizontalVelocity + new Vector3(0f, verticalVelocity, 0f)) * Time.deltaTime + platformDelta;
+        cc.Move(motion);
 
         // rotate
         if (rotateToMoveDirection && desiredDir.sqrMagnitude > 0.001f)
@@ -136,7 +135,7 @@ public class PlayerController25D_Anim : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 18f * Time.deltaTime);
         }
 
-        // animator params
+        // animator
         float planarSpeed = new Vector2(horizontalVelocity.x, horizontalVelocity.z).magnitude;
         float speed01 = Mathf.Clamp01(planarSpeed / moveSpeed);
 
@@ -145,13 +144,6 @@ public class PlayerController25D_Anim : MonoBehaviour
             animator.SetFloat(SpeedHash, speed01);
             animator.SetBool(GroundedHash, grounded);
             animator.SetBool(CrouchHash, crouchHeld);
-
-            // debug: vezi ce setezi
-            // if (debugParams && Time.frameCount % 60 == 0) // o dată pe secundă
-            // {
-            //     Debug.Log($"[TIKO] Speed={speed01:F2} | Grounded={grounded} | Crouch={crouchHeld}");
-            // }
-
             TickIdleStateMachine(grounded, speed01);
         }
 
@@ -172,7 +164,6 @@ public class PlayerController25D_Anim : MonoBehaviour
 
     private void TickIdleStateMachine(bool grounded, float speed01)
     {
-        // Condiția pentru idle: grounded, speed mic, nu crouch
         if (!enableIdleRandom || !grounded || crouchHeld || speed01 >= idleSpeedEpsilon)
         {
             idleTimer = 0f;
@@ -182,18 +173,15 @@ public class PlayerController25D_Anim : MonoBehaviour
         idleTimer += Time.deltaTime;
         if (idleTimer < nextIdleChange) return;
 
-        // alege slot 0/1/2 fără repetare
         int slot = Random.Range(0, 3);
-        if (slot == lastIdleSlot) 
+        if (slot == lastIdleSlot)
             slot = (slot + Random.Range(1, 3)) % 3;
-        
-        lastIdleSlot = slot;
 
+        lastIdleSlot = slot;
         animator.SetInteger(IdleSlotHash, slot);
         animator.SetTrigger(IdleNextHash);
 
-        if (debugParams)
-            Debug.Log($"[TIKO] Idle change: slot={slot}");
+        if (debugParams) Debug.Log($"[TIKO] Idle change: slot={slot}");
 
         idleTimer = 0f;
         nextIdleChange = Random.Range(idleChangeInterval.x, idleChangeInterval.y);
@@ -207,31 +195,26 @@ public class PlayerController25D_Anim : MonoBehaviour
         float angularDeg = angularSpeedRad * Mathf.Rad2Deg * Time.deltaTime * wheelSpinMultiplier;
 
         wheelSpinAngleAccum += angularDeg;
-
         Quaternion spin = Quaternion.AngleAxis(wheelSpinAngleAccum, wheelLocalAxis.normalized);
         wheel.localRotation = wheelInitialLocalRotation * spin;
     }
 
-    // ===== Send Messages callbacks [web:154]
-    public void OnMove(InputValue value) 
+    public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
         if (debugParams && moveInput.sqrMagnitude > 0.01f)
             Debug.Log($"[TIKO] OnMove: {moveInput}");
     }
 
-    public void OnCrouch(InputValue value) 
+    public void OnCrouch(InputValue value)
     {
         crouchHeld = value.isPressed;
-        if (debugParams)
-            Debug.Log($"[TIKO] OnCrouch: {crouchHeld}");
+        if (debugParams) Debug.Log($"[TIKO] OnCrouch: {crouchHeld}");
     }
 
     public void OnJump(InputValue value)
     {
-        if (!enableJump) return;
-        if (!value.isPressed) return;
-        if (crouchHeld) return;
+        if (!enableJump || !value.isPressed || crouchHeld) return;
 
         bool grounded = cc.isGrounded;
         float jumpVel = Mathf.Sqrt(jumpHeight * -2f * gravity);
@@ -251,5 +234,11 @@ public class PlayerController25D_Anim : MonoBehaviour
             if (animator) animator.SetTrigger(JumpHash);
             if (debugParams) Debug.Log($"[TIKO] Double jump! ({jumpsLeft} left)");
         }
+    }
+
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.collider.CompareTag("MovingPlatform"))
+            currentPlatform = hit.collider.GetComponent<MovingPlatform>();
     }
 }

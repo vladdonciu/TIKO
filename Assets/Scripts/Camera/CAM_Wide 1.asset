@@ -10,23 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ccd404ddb6621420499918dc8cb9b47d, type: 3}
-  m_Name: CAM_Vertical
+  m_Name: CAM_Wide 1
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneSettings
   offset: {x: 0, y: 4, z: -6}
-  smoothSpeed: 4
-  fieldOfView: 52
-  boundsExtentX: {x: 0, y: 0}
-  boundsExtentY: {x: -20, y: 20}
-  lockX: 1
+  smoothSpeed: 6
+  fieldOfView: 62
+  boundsExtentX: {x: -30, y: 30}
+  boundsExtentY: {x: -5, y: 5}
+  lockX: 0
   lockY: 0
-  lockZ: 0
+  lockZ: 1
   fixedX: 0
   fixedY: 0
   fixedZ: -6
   useFixedWorldPosition: 0
-  fixedWorldLookAt: {x: 4.78, y: 0, z: 0}
+  fixedWorldLookAt: {x: 0, y: 1.79, z: 0}
   cameraRotation: {x: 18, y: 0, z: 0}
-  lookAheadDistance: 0
+  lookAheadDistance: 2.5
   lookAheadSpeed: 3
-  deadZoneX: 0.1
-  deadZoneY: 0.4
+  deadZoneX: 0.6
+  deadZoneY: 0.1
