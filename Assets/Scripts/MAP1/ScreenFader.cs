@@ -4,61 +4,45 @@ using UnityEngine.UI;
 
 public class ScreenFader : MonoBehaviour
 {
-    public static ScreenFader Instance;
-
-    [Header("References")]
-    [SerializeField] private Image fadePanel;
+    [Header("Refs")]
+    public Image fadeImage;
 
     [Header("Settings")]
-    [SerializeField] private float fadeDuration = 0.8f;
+    public float fadeDuration = 1f;
 
     private void Awake()
     {
-        // Singleton - exista doar un ScreenFader
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-
-        if (!fadePanel) fadePanel = GetComponentInChildren<Image>();
-        SetAlpha(0f); // transparent la start
+        if (!fadeImage) fadeImage = GetComponent<Image>();
+        SetAlpha(0f);
     }
 
-    public IEnumerator FadeOut() // transparent → negru
+    public IEnumerator FadeOut()
     {
-        yield return StartCoroutine(Fade(0f, 1f));
+        yield return Fade(0f, 1f);
     }
 
-    public IEnumerator FadeIn() // negru → transparent
+    public IEnumerator FadeIn()
     {
-        yield return StartCoroutine(Fade(1f, 0f));
+        yield return Fade(1f, 0f);
     }
 
     private IEnumerator Fade(float from, float to)
     {
-        float elapsed = 0f;
-        SetAlpha(from);
-
-        while (elapsed < fadeDuration)
+        float t = 0f;
+        while (t < fadeDuration)
         {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / fadeDuration);
-            // Smoothstep pentru fade mai natural
-            t = t * t * (3f - 2f * t);
-            SetAlpha(Mathf.Lerp(from, to, t));
+            t += Time.deltaTime;
+            float a = Mathf.Lerp(from, to, t / fadeDuration);
+            SetAlpha(a);
             yield return null;
         }
-
         SetAlpha(to);
     }
 
     private void SetAlpha(float a)
     {
-        if (!fadePanel) return;
-        Color c = fadePanel.color;
+        Color c = fadeImage.color;
         c.a = a;
-        fadePanel.color = c;
+        fadeImage.color = c;
     }
 }
