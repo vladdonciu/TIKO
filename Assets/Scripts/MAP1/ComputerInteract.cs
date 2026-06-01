@@ -16,6 +16,7 @@ public class ComputerInteract : MonoBehaviour
     private bool isActivated = false;
     private bool showPrompt = false;
 
+
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
@@ -47,6 +48,7 @@ public class ComputerInteract : MonoBehaviour
 
         doorController.OpenDoors();
         StartCoroutine(ResetAfterCycle());
+
     }
 
     private void SetLights(GameObject[] lights, bool state)

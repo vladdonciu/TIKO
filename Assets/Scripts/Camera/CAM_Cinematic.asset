@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ccd404ddb6621420499918dc8cb9b47d, type: 3}
   m_Name: CAM_Cinematic
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoneSettings
-  offset: {x: 1.5, y: 4, z: -6}
+  offset: {x: 0.02, y: 1.8, z: -6}
   smoothSpeed: 2
   fieldOfView: 46
   boundsExtentX: {x: 0, y: 0}
@@ -24,7 +24,7 @@ MonoBehaviour:
   fixedY: 0
   fixedZ: -6
   useFixedWorldPosition: 1
-  fixedWorldLookAt: {x: 0.12, y: -1.74, z: -25.7}
+  fixedWorldLookAt: {x: 0.12, y: -1.74, z: -25}
   cameraRotation: {x: 20, y: 2, z: 0}
   lookAheadDistance: 0
   lookAheadSpeed: 1

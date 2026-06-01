@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
+[RequireComponent(typeof(Collider))]
 public class TeleportTrigger : MonoBehaviour
 {
     [Header("Teleport")]
@@ -10,38 +11,44 @@ public class TeleportTrigger : MonoBehaviour
     [Header("Camera la destinatie")]
     public CameraZone destinationCameraZone;
 
+    [Header("Fade")]
+    public ScreenFader fader;
+
     [Header("Settings")]
     public float delayOnBlack = 0.1f;
 
     private bool isTriggered = false;
 
+    private void Awake()
+    {
+        GetComponent<Collider>().isTrigger = true;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (isTriggered) return;
         if (!other.CompareTag("Player")) return;
-        if (!doorController.AreDoorOpen()) return;
+        if (doorController != null && !doorController.AreDoorOpen()) return;
+
         StartCoroutine(DoTeleport(other.transform));
     }
 
     private IEnumerator DoTeleport(Transform player)
     {
         isTriggered = true;
-        Debug.Log("[TELEPORT] Start");
 
-        CharacterController cc         = player.GetComponent<CharacterController>();
+        CharacterController cc = player.GetComponent<CharacterController>();
         CameraController camController = CameraController.Instance;
-        Camera cam = camController != null
-            ? camController.GetComponent<Camera>()
-            : Camera.main;
+        Camera cam = camController != null ? camController.GetComponent<Camera>() : Camera.main;
 
-        // 1. Fade OUT
-        yield return StartCoroutine(ScreenFader.Instance.FadeOut());
-        Debug.Log("[TELEPORT] Fade OUT done");
+        // 1) Fade OUT
+        if (fader != null)
+            yield return StartCoroutine(fader.FadeOut());
 
-        // 2. Dezactiveaza camera
+        // 2) Dezactiveaza camera
         if (cam) cam.enabled = false;
 
-        // 3. Teleporteaza playerul
+        // 3) Teleport
         if (cc != null)
         {
             cc.enabled = false;
@@ -52,37 +59,29 @@ public class TeleportTrigger : MonoBehaviour
         {
             player.position = teleportDestination;
         }
-        Debug.Log($"[TELEPORT] Player la {player.position}");
 
-        // 4. Aplica zona de camera de la destinatie — un singur apel, totul atomic
+        // 4) Aplica camera zone
         if (destinationCameraZone != null)
         {
             destinationCameraZone.ApplyToCamera(true);
-            Debug.Log($"[TELEPORT] Camera zone aplicata: {destinationCameraZone.settings?.name}");
         }
-        else
+        else if (camController != null)
         {
-            Debug.LogWarning("[TELEPORT] destinationCameraZone e NULL! " +
-                             "Asigneaza CameraZone in Inspector.");
-            camController.SetBounds(
-                new Vector2(-999f, -999f),
-                new Vector2( 999f,  999f)
-            );
+            camController.SetBounds(new Vector2(-999f, -999f), new Vector2(999f, 999f));
         }
 
-        // 5. Snap camera instant la player cu noile setari
-        camController.SnapNow();
-        Debug.Log($"[TELEPORT] Camera snap la {camController.transform.position}");
+        if (camController != null)
+            camController.SnapNow();
 
-        // 6. Pauza
+        // 5) Pauza
         yield return new WaitForSeconds(delayOnBlack);
 
-        // 7. Reactiveaza camera
+        // 6) Reactiveaza camera
         if (cam) cam.enabled = true;
 
-        // 8. Fade IN
-        yield return StartCoroutine(ScreenFader.Instance.FadeIn());
-        Debug.Log("[TELEPORT] Complet!");
+        // 7) Fade IN
+        if (fader != null)
+            yield return StartCoroutine(fader.FadeIn());
 
         isTriggered = false;
     }
@@ -96,10 +95,8 @@ public class TeleportTrigger : MonoBehaviour
         if (destinationCameraZone != null)
         {
             Gizmos.color = Color.yellow;
-            Gizmos.DrawLine(teleportDestination,
-                destinationCameraZone.transform.position);
-            Gizmos.DrawWireSphere(
-                destinationCameraZone.transform.position, 0.3f);
+            Gizmos.DrawLine(teleportDestination, destinationCameraZone.transform.position);
+            Gizmos.DrawWireSphere(destinationCameraZone.transform.position, 0.3f);
         }
     }
 }
