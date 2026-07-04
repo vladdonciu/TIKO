@@ -13,10 +13,10 @@ public class ProjectileBullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // TODO: damage system
-        // var health = other.GetComponent<Health>();
-        // if (health) health.TakeDamage(damage);
+        if (other.CompareTag("CameraZone")) return; // ignora zonele non-gameplay
 
+        Debug.Log("Bullet hit: " + other.name + " at time: " + Time.time);
+        // TODO: damage system
         DisableSelf();
     }
 

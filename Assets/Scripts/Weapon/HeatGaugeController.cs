@@ -4,18 +4,23 @@ public class HeatGaugeController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Renderer gaugeRenderer;
+    [SerializeField] private AudioSource audioSource;
+
+    [Header("Audio Clips")]
+    [SerializeField] private AudioClip overheatClip;
+    [SerializeField] private AudioClip cooldownReadyClip;
 
     [Header("Heat Settings")]
     [SerializeField] private float heatPerShot = 0.12f;
-    [SerializeField] private float coolRate = 0.35f;       // per secunda, normal
-    [SerializeField] private float overheatCoolRate = 0.5f; // per secunda, dupa overheat
+    [SerializeField] private float coolRate = 0.35f;
+    [SerializeField] private float overheatCoolRate = 0.5f;
 
     [Header("Colors")]
-    [SerializeField] private Color coolColor = new Color(0f, 1f, 1f);      // cyan
-    [SerializeField] private Color midColor = new Color(1f, 0.55f, 0f);    // portocaliu
-    [SerializeField] private Color hotColor = new Color(1f, 0f, 0.19f);    // crimson
+    [SerializeField] private Color coolColor = new Color(0f, 1f, 1f);
+    [SerializeField] private Color midColor = new Color(1f, 0.55f, 0f);
+    [SerializeField] private Color hotColor = new Color(1f, 0f, 0.19f);
 
-    private float heat; // 0 = rece, 1 = overheat total
+    private float heat;
     private bool isOverheated;
     private Material gaugeMat;
 
@@ -23,7 +28,7 @@ public class HeatGaugeController : MonoBehaviour
 
     private void Awake()
     {
-        gaugeMat = gaugeRenderer.material; // instanta unica, nu shared material
+        gaugeMat = gaugeRenderer.material;
     }
 
     private void Update()
@@ -32,7 +37,10 @@ public class HeatGaugeController : MonoBehaviour
         heat = Mathf.Max(0f, heat - rate * Time.deltaTime);
 
         if (isOverheated && heat <= 0f)
+        {
             isOverheated = false;
+            PlayCooldownReady(); // NOU: sunet cand arma e gata de tras din nou
+        }
 
         UpdateVisual();
     }
@@ -44,14 +52,29 @@ public class HeatGaugeController : MonoBehaviour
         heat = Mathf.Clamp01(heat + heatPerShot);
 
         if (heat >= 1f)
+        {
             isOverheated = true;
+            PlayOverheat(); // NOU: sunet la momentul exact de overheat
+        }
 
-        UpdateVisual(); // update instant, efect de "recoil" pe gauge
+        UpdateVisual();
+    }
+
+    private void PlayOverheat()
+    {
+        if (audioSource != null && overheatClip != null)
+            audioSource.PlayOneShot(overheatClip);
+    }
+
+    private void PlayCooldownReady()
+    {
+        if (audioSource != null && cooldownReadyClip != null)
+            audioSource.PlayOneShot(cooldownReadyClip);
     }
 
     private void UpdateVisual()
     {
-        float fill = 1f - heat; // coolant ramas: 1 = plin, 0 = gol
+        float fill = 1f - heat;
         gaugeMat.SetFloat("_FillAmount", fill);
 
         Color c = heat < 0.5f

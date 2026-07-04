@@ -31,21 +31,31 @@ Shader "Tiko/RobotFaceScreen"
         _ScreenFlicker ("Screen Flicker", Range(0, 0.1)) = 0.02
         _ScreenNoise ("Screen Noise", Range(0, 0.1)) = 0.015
         _VignetteIntensity ("Vignette", Range(0, 1)) = 0.3
+
+        [Header(Stealth Cloak)]
+        _StealthAmount ("Stealth Amount", Range(0, 1)) = 0
+        _StealthMaxAlpha ("Stealth Min Opacity", Range(0, 1)) = 0.3
+        _WarningGlitch ("Warning Glitch", Range(0, 1)) = 0
+        [HDR] _WarningColor ("Warning Color", Color) = (3, 0, 0.5, 1)
     }
 
     SubShader
     {
         Tags
         {
-            "RenderType" = "Opaque"
+            "RenderType" = "Transparent"
             "RenderPipeline" = "UniversalPipeline"
-            "Queue" = "Geometry"
+            "Queue" = "Transparent"
         }
 
         Pass
         {
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
+
+            Blend SrcAlpha OneMinusSrcAlpha
+            ZWrite On
+            Cull Back
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -88,9 +98,11 @@ Shader "Tiko/RobotFaceScreen"
                 float  _ScreenFlicker;
                 float  _ScreenNoise;
                 float  _VignetteIntensity;
+                float  _StealthAmount;
+                float  _StealthMaxAlpha;
+                float  _WarningGlitch;
+                float4 _WarningColor;
             CBUFFER_END
-
-            // ── Utilities ──
 
             float roundedRectSDF(float2 p, float2 halfSize, float radius)
             {
@@ -113,8 +125,6 @@ Shader "Tiko/RobotFaceScreen"
                 return frac((p3.x + p3.y) * p3.z);
             }
 
-            // ── Eye ──
-            // Returns: x = mask, y = raw SDF dist
             float2 drawEye(float2 uv, float2 center, float2 squash,
                            float rotation, float width, float height,
                            float radius, float blinkAmt)
@@ -132,8 +142,6 @@ Shader "Tiko/RobotFaceScreen"
                 float mask = 1.0 - smoothstep(-aa, aa, dist);
                 return float2(mask, dist);
             }
-
-            // ── Screen FX ──
 
             float scanlines(float2 uv)
             {
@@ -159,8 +167,6 @@ Shader "Tiko/RobotFaceScreen"
                 float2 c = uv - 0.5;
                 return 1.0 - _VignetteIntensity * dot(c, c) * 2.0;
             }
-
-            // ── Vertex / Fragment ──
 
             Varyings vert(Attributes input)
             {
@@ -189,23 +195,28 @@ Shader "Tiko/RobotFaceScreen"
                 float eyeMask = saturate(L.x + R.x);
                 float minDist = min(L.y, R.y);
 
-                // Glow
                 float gf = 1.0 - saturate(minDist / max(_GlowSoftness, 0.001));
                 gf = pow(gf, 2.0) * _GlowIntensity;
                 float glowMask = gf * (1.0 - eyeMask);
 
-                // Screen FX
-                float fx = scanlines(uv) * screenFlicker()
-                         * screenNoise(uv) * vignette(uv);
+                float glitchNoiseBoost = 1.0 + _WarningGlitch * 3.0;
 
-                // Compose
+                float fx = scanlines(uv) * screenFlicker()
+                         * (1.0 - (1.0 - screenNoise(uv)) * glitchNoiseBoost)
+                         * vignette(uv);
+
                 half3 screenCol = _ScreenColor.rgb + _ScreenEmissionColor.rgb * fx;
-                half3 eyeCol    = _EyeEmissionColor.rgb * fx;
-                half3 glowCol   = _EyeEmissionColor.rgb * glowMask * fx * 0.5;
+
+                half3 baseEyeColor = lerp(_EyeEmissionColor.rgb, _WarningColor.rgb, _WarningGlitch);
+                half3 eyeCol = baseEyeColor * fx;
+
+                half3 glowCol = baseEyeColor * glowMask * fx * 0.5;
 
                 half3 final3 = lerp(screenCol, eyeCol, eyeMask) + glowCol;
 
-                return half4(final3, 1.0);
+                float alpha = 1.0 - (_StealthAmount * (1.0 - _StealthMaxAlpha));
+
+                return half4(final3, alpha);
             }
             ENDHLSL
         }
