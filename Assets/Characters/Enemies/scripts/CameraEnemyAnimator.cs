@@ -2,78 +2,200 @@ using UnityEngine;
 
 public class CameraEnemyAnimator : MonoBehaviour
 {
-    [Header("Refs")]
+    private enum AnimationMode
+    {
+        IdleNormal,
+        ScanRun,
+        PatrolRun,
+        ChaseRun,
+        AttackIdle
+    }
+
+    [Header("References")]
     [SerializeField] private Animator animator;
 
     [Header("Idle Random")]
-    public Vector2 idleChangeInterval = new Vector2(2f, 5f);
+    [Tooltip("Idle 1 este blocat numai în timpul atacului. Idle 1/2/3 sunt disponibile în pauza naturală.")]
+    [SerializeField] private Vector2 idleChangeInterval =
+        new Vector2(1.5f, 3f);
 
     [Header("Speed Settings")]
-    public float patrolAnimSpeed = 0.7f;
-    public float chaseAnimSpeed  = 1.0f;
+    [Tooltip("Viteza Run pentru patrulare reală.")]
+    [SerializeField] private float patrolAnimSpeed = 0.7f;
 
-    private static readonly int SpeedHash     = Animator.StringToHash("Speed");
-    private static readonly int IdleIndexHash = Animator.StringToHash("IdleIndex");
+    [Tooltip("Viteza Run pentru chase.")]
+    [SerializeField] private float chaseAnimSpeed = 1f;
 
-    private float _idleTimer;
-    private float _idleInterval;
-    private bool  _isMoving;
+    [Tooltip("Viteza Run folosită strict când Sentry se rotește în scan.")]
+    [SerializeField] private float scanAnimSpeed = 0.38f;
 
-    void Awake()
+    private static readonly int SpeedHash =
+        Animator.StringToHash("Speed");
+
+    private static readonly int IdleIndexHash =
+        Animator.StringToHash("IdleIndex");
+
+    private AnimationMode currentMode;
+
+    private float idleTimer;
+    private float idleInterval;
+
+    private void Awake()
     {
-        if (!animator)
+        if (animator == null)
             animator = GetComponentInChildren<Animator>();
 
-        if (!animator)
-            Debug.LogError($"[CameraEnemyAnimator] Animator nu a fost găsit pe {gameObject.name}!");
+        if (animator == null)
+        {
+            Debug.LogError(
+                $"[CameraEnemyAnimator] Animator nu a fost găsit pe {gameObject.name}!"
+            );
 
-        _idleInterval = Random.Range(idleChangeInterval.x, idleChangeInterval.y);
+            enabled = false;
+            return;
+        }
+
+        ResetIdleTimer();
+        SetAttackIdle();
     }
 
-    void Update()
+    private void Update()
     {
-        if (_isMoving) return;
+        if (animator == null)
+            return;
+
+        if (currentMode != AnimationMode.IdleNormal)
+            return;
+
         TickIdleRandom();
     }
 
-    // ── Apelat din CameraEnemyAI când inamicul patrulează ──────
+    // Folosit DOAR în timpul rotației de scan.
+    public void SetScanning()
+    {
+        if (animator == null)
+            return;
+
+        if (currentMode == AnimationMode.ScanRun)
+            return;
+
+        currentMode = AnimationMode.ScanRun;
+
+        animator.SetFloat(
+            SpeedHash,
+            scanAnimSpeed
+        );
+    }
+
+    // Folosit pentru inamicii mobili care patrulează.
     public void SetPatrolling()
     {
-        _isMoving = true;
-        if (!animator) return;
-        animator.SetFloat(SpeedHash, patrolAnimSpeed);
+        if (animator == null)
+            return;
+
+        if (currentMode == AnimationMode.PatrolRun)
+            return;
+
+        currentMode = AnimationMode.PatrolRun;
+
+        animator.SetFloat(
+            SpeedHash,
+            patrolAnimSpeed
+        );
     }
 
-    // ── Apelat din CameraEnemyAI când urmărește player-ul ──────
+    // Folosit pentru chase real.
     public void SetChasing()
     {
-        _isMoving = true;
-        if (!animator) return;
-        animator.SetFloat(SpeedHash, chaseAnimSpeed);
+        if (animator == null)
+            return;
+
+        if (currentMode == AnimationMode.ChaseRun)
+            return;
+
+        currentMode = AnimationMode.ChaseRun;
+
+        animator.SetFloat(
+            SpeedHash,
+            chaseAnimSpeed
+        );
     }
 
-    // ── Apelat din CameraEnemyAI când stă (Attack sau fără patrol) ──
+    // Idle normal: permite Idle 1, Idle 2 și Idle 3.
+    // Este apelat imediat când scan-ul se termină sau este întrerupt.
+    public void SetStationaryIdle()
+    {
+        SetNormalIdle();
+    }
+
+    // Idle normal pentru orice inamic care nu atacă.
     public void ForceIdle()
     {
-        _isMoving = false;
-        if (!animator) return;
-        animator.SetFloat(SpeedHash, 0f);
+        SetNormalIdle();
     }
 
-    // ── Idle random: schimbă CAMERA_idle1/2/3 ──────────────────
+    // Folosit strict în Attack / charge / shot.
+    public void SetAttackIdle()
+    {
+        if (animator == null)
+            return;
+
+        if (currentMode == AnimationMode.AttackIdle)
+            return;
+
+        currentMode = AnimationMode.AttackIdle;
+
+        animator.SetFloat(SpeedHash, 0f);
+        animator.SetInteger(IdleIndexHash, 1);
+    }
+
+    private void SetNormalIdle()
+    {
+        if (animator == null)
+            return;
+
+        if (currentMode == AnimationMode.IdleNormal)
+            return;
+
+        currentMode = AnimationMode.IdleNormal;
+
+        // Această linie trebuie să declanșeze instant Run → Idle.
+        animator.SetFloat(SpeedHash, 0f);
+
+        ResetIdleTimer();
+    }
+
     private void TickIdleRandom()
     {
-        _idleTimer += Time.deltaTime;
-        if (_idleTimer < _idleInterval) return;
+        idleTimer += Time.deltaTime;
 
-        _idleTimer    = 0f;
-        _idleInterval = Random.Range(idleChangeInterval.x, idleChangeInterval.y);
+        if (idleTimer < idleInterval)
+            return;
 
-        // Alege un idle diferit față de cel curent
-        int current = animator.GetInteger(IdleIndexHash);
-        int next;
-        do { next = Random.Range(1, 4); } while (next == current);
+        ResetIdleTimer();
 
-        animator.SetInteger(IdleIndexHash, next);
+        int currentIdle = animator.GetInteger(IdleIndexHash);
+        int nextIdle;
+
+        do
+        {
+            nextIdle = Random.Range(1, 4);
+        }
+        while (nextIdle == currentIdle);
+
+        animator.SetInteger(
+            IdleIndexHash,
+            nextIdle
+        );
+    }
+
+    private void ResetIdleTimer()
+    {
+        idleTimer = 0f;
+
+        idleInterval = Random.Range(
+            idleChangeInterval.x,
+            idleChangeInterval.y
+        );
     }
 }

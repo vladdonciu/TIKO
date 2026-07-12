@@ -2,290 +2,824 @@ using UnityEngine;
 
 public class CameraEnemyAI : MonoBehaviour
 {
-    public enum State { Patrol, Chase, Attack }
-
-    [Header("Refs")]
-    public Transform eye;
-    public Transform[] patrolPoints;
-    public CameraEnemyLaser laser;
-    public CameraEnemyAnimator enemyAnimator;
-
-    [Header("Detection")]
-    public float viewDistance   = 12f;
-    public float viewAngle      = 90f;
-    public float attackDistance = 6f;
-
-    [Header("Movement")]
-    public float patrolSpeed  = 2f;
-    public float chaseSpeed   = 4f;
-    public float rotateSpeed  = 6f;
-
-    [Header("Patrol")]
-    public float waypointReachDistance = 0.4f;
-
-    [Header("Separation")]
-    public float separationRadius   = 1.2f;
-    public float separationStrength = 2f;
-    public LayerMask enemyMask;
-
-    private Transform player;
-    private PlayerController25D_Anim tikoCtrl;
-    private Rigidbody rb;
-    private int   patrolIndex  = 0;
-    private State currentState = State.Patrol;
-
-    // ─── START ──────────────────────────────────────────────────
-    void Start()
+    private enum EnemyState
     {
-        rb = GetComponent<Rigidbody>();
-
-        GameObject p = GameObject.FindGameObjectWithTag("Player");
-        if (p)
-        {
-            player   = p.transform;
-            tikoCtrl = p.GetComponent<PlayerController25D_Anim>();
-        }
-
-        if (!eye)           eye           = transform;
-        if (!enemyAnimator) enemyAnimator = GetComponentInChildren<CameraEnemyAnimator>();
-
-        if (patrolPoints == null || patrolPoints.Length == 0)
-            enemyAnimator?.ForceIdle();
+        Idle,
+        Patrol,
+        Suspicious,
+        Chase,
+        Attack,
+        Search,
+        ReturnToPatrol
     }
 
-    // ─── UPDATE ─────────────────────────────────────────────────
-    void Update()
+    [Header("References")]
+    [SerializeField] private Transform eye;
+    [SerializeField] private CameraEnemyLaser laser;
+    [SerializeField] private CameraEnemyAnimator enemyAnimator;
+
+    [Header("Ambient Audio")]
+    [Tooltip("AudioSource separat pentru hum/idle/patrol. Nu folosi AudioSource-ul laserului.")]
+    [SerializeField] private AudioSource ambientAudio;
+
+    [Tooltip("Pitch normal pentru Idle, Patrol, Search și Return.")]
+    [SerializeField] private float ambientIdlePitch = 1f;
+
+    [Tooltip("Pitch mai rapid pentru Chase și Attack.")]
+    [SerializeField] private float ambientRunPitch = 1.12f;
+
+    [Tooltip("Cât de repede se schimbă pitch-ul între stări.")]
+    [SerializeField] private float ambientPitchLerpSpeed = 5f;
+
+    [Header("Player")]
+    [SerializeField] private Transform player;
+    [SerializeField] private StealthCloakController playerStealth;
+
+    [Header("Detection")]
+    [Tooltip("Distanța maximă la care inamicul poate vedea Tiko.")]
+    [SerializeField] private float detectionRange = 12f;
+
+    [Tooltip("Unghiul total al conului vizual la distanță.")]
+    [Range(10f, 360f)]
+    [SerializeField] private float viewAngle = 110f;
+
+    [Tooltip("Cât timp trebuie văzut Tiko înainte să înceapă chase.")]
+    [SerializeField] private float detectionConfirmTime = 0.35f;
+
+    [Tooltip("În această rază, Sentry detectează Tiko la 360°, chiar și din spate. Necesită line-of-sight.")]
+    [SerializeField] private float closeDetectionRange = 2.25f;
+
+    [Tooltip("Dacă este activ, Ghost face Tiko complet nedetectabil la orice distanță.")]
+    [SerializeField] private bool ghostBlocksAllDetection = true;
+
+    [Tooltip("Bifează Player, Ground, Environment, Wall și Obstacles.")]
+    [SerializeField] private LayerMask visionMask = ~0;
+
+    [Header("Movement")]
+    [Tooltip("ON pentru inamicul mobil; OFF pentru sentry staționar.")]
+    [SerializeField] private bool canMove = true;
+
+    [Tooltip("Doar pentru sentry: Idle normal când nu scanează; Idle 1 doar la Attack.")]
+    [SerializeField] private bool stationaryUsesIdleOnly = true;
+
+    [SerializeField] private float patrolSpeed = 1.5f;
+    [SerializeField] private float chaseSpeed = 3.75f;
+    [SerializeField] private float stoppingDistance = 5f;
+    [SerializeField] private float rotationSpeed = 540f;
+
+    [Header("Stationary Sentry Scan")]
+    [Tooltip("Activează scanarea naturală pentru turela staționară.")]
+    [SerializeField] private bool useStationaryScan = true;
+
+    [Tooltip("Viteza de rotație în grade pe secundă în timpul scanării.")]
+    [SerializeField] private float scanRotationSpeed = 35f;
+
+    [Tooltip("Unghiul minim rotit într-o scanare.")]
+    [SerializeField] private float minScanAngle = 55f;
+
+    [Tooltip("Unghiul maxim rotit într-o scanare.")]
+    [SerializeField] private float maxScanAngle = 120f;
+
+    [Tooltip("Timp minim de pauză idle între două scanări.")]
+    [SerializeField] private float minScanPause = 3.2f;
+
+    [Tooltip("Timp maxim de pauză idle între două scanări.")]
+    [SerializeField] private float maxScanPause = 5.5f;
+
+    [Header("Patrol")]
+    [SerializeField] private Transform[] patrolPoints;
+    [SerializeField] private float patrolWaitTime = 1f;
+    [SerializeField] private float patrolPointReachDistance = 0.15f;
+
+    [Header("Target Memory")]
+    [SerializeField] private float loseTargetDelay = 1.2f;
+    [SerializeField] private float searchDuration = 2.5f;
+
+    [Header("Simple Obstacle Avoidance")]
+    [Tooltip("Layerele pereților/props-urilor care blochează deplasarea.")]
+    [SerializeField] private LayerMask obstacleMask;
+
+    [SerializeField] private float obstacleCheckDistance = 1.2f;
+    [SerializeField] private float avoidanceAngle = 55f;
+    [SerializeField] private float avoidanceDuration = 0.7f;
+
+    private EnemyState currentState;
+    private int patrolIndex;
+
+    private float stateTimer;
+    private float visibleTimer;
+    private float lostTargetTimer;
+
+    private Vector3 lastKnownPlayerPosition;
+
+    private float avoidanceTimer;
+    private int avoidanceSide = 1;
+
+    private bool isScanning;
+    private float scanAngleRemaining;
+    private float scanPauseTimer;
+    private int currentScanDirection;
+
+    private bool IsStationary => !canMove && stationaryUsesIdleOnly;
+
+    private void Awake()
     {
-        if (!player) return;
+        if (eye == null)
+            eye = transform;
+
+        if (laser == null)
+            laser = GetComponent<CameraEnemyLaser>();
+
+        if (enemyAnimator == null)
+            enemyAnimator = GetComponent<CameraEnemyAnimator>();
+
+        FindPlayer();
+
+        currentState = HasPatrolPoints() && canMove
+            ? EnemyState.Patrol
+            : EnemyState.Idle;
+
+        scanPauseTimer = Random.Range(
+            minScanPause,
+            maxScanPause
+        );
+
+        if (ambientAudio != null)
+            ambientAudio.pitch = ambientIdlePitch;
+    }
+
+    private void Update()
+    {
+        UpdateAmbientAudio();
+
+        if (player == null)
+        {
+            FindPlayer();
+
+            if (player == null)
+                return;
+        }
+
+        bool canSeePlayer = CanSeePlayer();
 
         switch (currentState)
         {
-            case State.Patrol: TickPatrol(); break;
-            case State.Chase:  TickChase();  break;
-            case State.Attack: TickAttack(); break;
-        }
+            case EnemyState.Idle:
+                UpdateIdle(canSeePlayer);
+                break;
 
-        laser?.TickLaser(currentState == State.Attack);
+            case EnemyState.Patrol:
+                UpdatePatrol(canSeePlayer);
+                break;
+
+            case EnemyState.Suspicious:
+                UpdateSuspicious(canSeePlayer);
+                break;
+
+            case EnemyState.Chase:
+                UpdateChase(canSeePlayer);
+                break;
+
+            case EnemyState.Attack:
+                UpdateAttack(canSeePlayer);
+                break;
+
+            case EnemyState.Search:
+                UpdateSearch(canSeePlayer);
+                break;
+
+            case EnemyState.ReturnToPatrol:
+                UpdateReturnToPatrol(canSeePlayer);
+                break;
+        }
     }
 
-    // ─── PATROL ─────────────────────────────────────────────────
-    void TickPatrol()
+    private void FindPlayer()
     {
-        if (CanSeePlayer())
+        GameObject playerObject =
+            GameObject.FindGameObjectWithTag("Player");
+
+        if (playerObject == null)
+            return;
+
+        player = playerObject.transform;
+
+        playerStealth =
+            playerObject.GetComponent<StealthCloakController>();
+    }
+
+    private void UpdateIdle(bool canSeePlayer)
+    {
+        laser?.TickLaser(false);
+
+        if (canSeePlayer)
         {
-            currentState = State.Chase;
+            StopStationaryScan();
+            EnterState(EnemyState.Suspicious);
             return;
         }
 
-        if (patrolPoints == null || patrolPoints.Length == 0)
+        UpdateStationaryScan();
+    }
+
+    private void UpdatePatrol(bool canSeePlayer)
+    {
+        laser?.TickLaser(false);
+
+        if (canSeePlayer)
         {
-            enemyAnimator?.ForceIdle();
+            EnterState(EnemyState.Suspicious);
             return;
         }
 
+        if (!canMove || !HasPatrolPoints())
+        {
+            EnterState(EnemyState.Idle);
+            return;
+        }
+
+        Transform targetPoint = patrolPoints[patrolIndex];
+
+        if (FlatDistance(transform.position, targetPoint.position) <=
+            patrolPointReachDistance)
+        {
+            SetIdleAnimation();
+
+            stateTimer += Time.deltaTime;
+
+            if (stateTimer >= patrolWaitTime)
+            {
+                patrolIndex =
+                    (patrolIndex + 1) % patrolPoints.Length;
+
+                stateTimer = 0f;
+            }
+
+            return;
+        }
+
+        stateTimer = 0f;
+
+        MoveTowards(targetPoint.position, patrolSpeed);
         enemyAnimator?.SetPatrolling();
-
-        Transform target = patrolPoints[patrolIndex];
-        if (target == null) return;
-
-        MoveTowards(target.position, patrolSpeed);
-
-        if (Vector3.Distance(transform.position, target.position) < waypointReachDistance)
-            patrolIndex = (patrolIndex + 1) % patrolPoints.Length;
     }
 
-    // ─── CHASE ──────────────────────────────────────────────────
-    void TickChase()
+    private void UpdateSuspicious(bool canSeePlayer)
     {
-        float dist = Vector3.Distance(transform.position, player.position);
+        StopStationaryScan();
 
-        if (dist <= attackDistance)
+        SetIdleAnimation();
+        laser?.TickLaser(false);
+
+        if (!canSeePlayer)
         {
-            currentState = State.Attack;
+            EnterState(GetDefaultState());
             return;
         }
 
-        if (!CanSeePlayer())
+        FacePosition(player.position);
+
+        visibleTimer += Time.deltaTime;
+
+        if (visibleTimer >= detectionConfirmTime)
         {
-            currentState = State.Patrol;
+            lastKnownPlayerPosition = player.position;
+
+            EnterState(EnemyState.Chase);
+        }
+    }
+
+    private void UpdateChase(bool canSeePlayer)
+    {
+        StopStationaryScan();
+
+        laser?.TickLaser(false);
+
+        if (!canSeePlayer)
+        {
+            SetIdleAnimation();
+
+            lostTargetTimer += Time.deltaTime;
+
+            if (lostTargetTimer >= loseTargetDelay)
+                EnterState(EnemyState.Search);
+
             return;
         }
 
-        enemyAnimator?.SetChasing();
+        lastKnownPlayerPosition = player.position;
+        lostTargetTimer = 0f;
+
+        float distanceToPlayer =
+            FlatDistance(transform.position, player.position);
+
+        if (IsStationary)
+        {
+            FacePosition(player.position);
+
+            SetIdleAnimation();
+
+            if (distanceToPlayer <= stoppingDistance)
+                EnterState(EnemyState.Attack);
+
+            return;
+        }
+
+        if (distanceToPlayer <= stoppingDistance)
+        {
+            EnterState(EnemyState.Attack);
+            return;
+        }
+
         MoveTowards(player.position, chaseSpeed);
+        enemyAnimator?.SetChasing();
     }
 
-    // ─── ATTACK ─────────────────────────────────────────────────
-    void TickAttack()
+    private void UpdateAttack(bool canSeePlayer)
     {
-        float dist = Vector3.Distance(transform.position, player.position);
+        StopStationaryScan();
 
-        if (dist > attackDistance || !CanSeePlayer())
+        if (!canSeePlayer)
         {
-            currentState = State.Chase;
+            laser?.TickLaser(false);
+
+            EnterState(EnemyState.Chase);
             return;
         }
 
-        enemyAnimator?.ForceIdle();
+        lastKnownPlayerPosition = player.position;
 
-        // Rotire spre player fără mișcare
-        Vector3 dir = (player.position - transform.position);
-        dir.y = 0f;
-        if (dir.sqrMagnitude > 0.001f)
+        float distanceToPlayer =
+            FlatDistance(transform.position, player.position);
+
+        if (!IsStationary && distanceToPlayer > stoppingDistance)
         {
-            Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation, targetRot, rotateSpeed * Time.deltaTime);
+            laser?.TickLaser(false);
+
+            EnterState(EnemyState.Chase);
+            return;
         }
 
-        // Oprește orice mișcare reziduală
-        if (rb) rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+        FacePosition(player.position);
+
+        // Attack / charge / shot: doar Idle 1.
+        enemyAnimator?.SetAttackIdle();
+
+        laser?.TickLaser(true);
     }
 
-    // ─── CAN SEE PLAYER ─────────────────────────────────────────
-    bool CanSeePlayer()
+    private void UpdateSearch(bool canSeePlayer)
     {
-        if (!player) return false;
+        laser?.TickLaser(false);
 
-        Vector3 targetPos = player.position + Vector3.up * 0.5f;
-        Vector3 dir       = (targetPos - eye.position).normalized;
-        float   dist      = Vector3.Distance(eye.position, targetPos);
-
-        bool isStealth = tikoCtrl != null && tikoCtrl.IsStealth;
-
-        if (isStealth)
+        if (canSeePlayer)
         {
-            // STEALTH: distanță redusă + doar din față
-            if (dist > viewDistance * 0.4f) return false;
-            float angle = Vector3.Angle(eye.forward, dir);
-            if (angle > viewAngle * 0.5f) return false;
-        }
-        else
-        {
-            // NORMAL: 360° până la viewDistance complet
-            if (dist > viewDistance) return false;
-            // fără restricție de unghi
+            StopStationaryScan();
+
+            EnterState(EnemyState.Chase);
+            return;
         }
 
-        // Raycast — obstacolele blochează indiferent de mod
-        if (Physics.Raycast(eye.position, dir, out RaycastHit hit, dist))
+        if (IsStationary)
         {
-            Debug.DrawLine(eye.position, hit.point,
-                hit.collider.CompareTag("Player") ? Color.red : Color.yellow);
-            return hit.collider.CompareTag("Player");
+            UpdateStationaryScan();
+
+            stateTimer += Time.deltaTime;
+
+            if (stateTimer >= searchDuration)
+                EnterState(GetDefaultState());
+
+            return;
         }
 
-        Debug.DrawLine(eye.position, targetPos, Color.green);
+        if (FlatDistance(
+            transform.position,
+            lastKnownPlayerPosition) > patrolPointReachDistance)
+        {
+            MoveTowards(lastKnownPlayerPosition, patrolSpeed);
+
+            enemyAnimator?.SetChasing();
+            return;
+        }
+
+        SetIdleAnimation();
+
+        stateTimer += Time.deltaTime;
+
+        if (stateTimer >= searchDuration)
+            EnterState(EnemyState.ReturnToPatrol);
+    }
+
+    private void UpdateReturnToPatrol(bool canSeePlayer)
+    {
+        laser?.TickLaser(false);
+
+        if (canSeePlayer)
+        {
+            EnterState(EnemyState.Chase);
+            return;
+        }
+
+        if (!HasPatrolPoints() || !canMove)
+        {
+            EnterState(EnemyState.Idle);
+            return;
+        }
+
+        Transform returnPoint = patrolPoints[patrolIndex];
+
+        if (FlatDistance(transform.position, returnPoint.position) <=
+            patrolPointReachDistance)
+        {
+            EnterState(EnemyState.Patrol);
+            return;
+        }
+
+        MoveTowards(returnPoint.position, patrolSpeed);
+        enemyAnimator?.SetPatrolling();
+    }
+
+    private void UpdateStationaryScan()
+    {
+        if (!IsStationary || !useStationaryScan)
+        {
+            enemyAnimator?.SetStationaryIdle();
+            return;
+        }
+
+        if (isScanning)
+        {
+            float angleThisFrame =
+                scanRotationSpeed * Time.deltaTime;
+
+            angleThisFrame = Mathf.Min(
+                angleThisFrame,
+                scanAngleRemaining
+            );
+
+            transform.Rotate(
+                Vector3.up,
+                angleThisFrame * currentScanDirection,
+                Space.World
+            );
+
+            scanAngleRemaining -= angleThisFrame;
+
+            // Run doar cât se rotește.
+            enemyAnimator?.SetScanning();
+
+            if (scanAngleRemaining <= 0f)
+            {
+                isScanning = false;
+
+                scanPauseTimer = Random.Range(
+                    minScanPause,
+                    maxScanPause
+                );
+
+                // Oprește Run imediat; idle random normal.
+                enemyAnimator?.SetStationaryIdle();
+            }
+
+            return;
+        }
+
+        enemyAnimator?.SetStationaryIdle();
+
+        scanPauseTimer -= Time.deltaTime;
+
+        if (scanPauseTimer <= 0f)
+            BeginNewScan();
+    }
+
+    private void BeginNewScan()
+    {
+        float safeMinAngle = Mathf.Max(1f, minScanAngle);
+        float safeMaxAngle =
+            Mathf.Max(safeMinAngle, maxScanAngle);
+
+        currentScanDirection =
+            Random.value < 0.5f ? -1 : 1;
+
+        scanAngleRemaining = Random.Range(
+            safeMinAngle,
+            safeMaxAngle
+        );
+
+        isScanning = true;
+    }
+
+    private void StopStationaryScan()
+    {
+        isScanning = false;
+        scanAngleRemaining = 0f;
+    }
+
+    private bool CanSeePlayer()
+    {
+        if (player == null)
+            return false;
+
+        bool playerIsStealthed =
+            playerStealth != null &&
+            playerStealth.IsStealthed;
+
+        // Ghost = invizibil complet, inclusiv la proximitate.
+        if (ghostBlocksAllDetection && playerIsStealthed)
+            return false;
+
+        Vector3 origin = eye.position;
+
+        Vector3 target =
+            player.position + Vector3.up * 0.5f;
+
+        Vector3 toPlayer = target - origin;
+
+        float distanceToPlayer = toPlayer.magnitude;
+
+        if (distanceToPlayer > detectionRange)
+            return false;
+
+        if (distanceToPlayer <= 0.001f)
+            return true;
+
+        // Verifică peretele înaintea oricărei reguli de unghi.
+        if (!HasLineOfSight(
+            origin,
+            toPlayer,
+            distanceToPlayer))
+        {
+            return false;
+        }
+
+        // Aproape: detecție 360°.
+        if (distanceToPlayer <= closeDetectionRange)
+            return true;
+
+        // La distanță: doar în conul frontal.
+        Vector3 flatDirection =
+            player.position - transform.position;
+
+        flatDirection.y = 0f;
+
+        if (flatDirection.sqrMagnitude < 0.001f)
+            return true;
+
+        float angleToPlayer = Vector3.Angle(
+            transform.forward,
+            flatDirection.normalized
+        );
+
+        return angleToPlayer <= viewAngle * 0.5f;
+    }
+
+    private bool HasLineOfSight(
+        Vector3 origin,
+        Vector3 toPlayer,
+        float distanceToPlayer)
+    {
+        if (Physics.Raycast(
+            origin,
+            toPlayer.normalized,
+            out RaycastHit hit,
+            distanceToPlayer + 0.1f,
+            visionMask,
+            QueryTriggerInteraction.Ignore))
+        {
+            return hit.collider.GetComponentInParent<TikoHealth>() != null;
+        }
+
         return false;
     }
 
-    // ─── MOVE TOWARDS (prin Rigidbody — respectă coliziunile) ───
-    void MoveTowards(Vector3 target, float speed)
+    private void MoveTowards(Vector3 targetPosition, float speed)
     {
-        Vector3 dir = target - transform.position;
-        dir.y = 0f;
+        if (!canMove)
+            return;
 
-        dir += GetSeparation();
+        Vector3 flatTarget = targetPosition;
+        flatTarget.y = transform.position.y;
 
-        if (dir.sqrMagnitude < 0.001f) return;
+        Vector3 wantedDirection =
+            (flatTarget - transform.position).normalized;
 
-        Vector3 move = dir.normalized * speed * Time.deltaTime;
-        rb.MovePosition(transform.position + move);
+        if (wantedDirection.sqrMagnitude <= 0.001f)
+            return;
 
-        // Rotire manuală
-        Quaternion rot = Quaternion.LookRotation(dir.normalized);
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation, rot, rotateSpeed * Time.deltaTime);
+        Vector3 moveDirection =
+            GetAvoidanceDirection(wantedDirection);
+
+        FaceDirection(moveDirection);
+
+        transform.position +=
+            moveDirection * speed * Time.deltaTime;
     }
 
-    // ─── SEPARATION ─────────────────────────────────────────────
-    Vector3 GetSeparation()
+    private Vector3 GetAvoidanceDirection(Vector3 wantedDirection)
     {
-        Collider[] hits  = Physics.OverlapSphere(transform.position, separationRadius, enemyMask);
-        Vector3    force = Vector3.zero;
+        Vector3 origin =
+            transform.position + Vector3.up * 0.35f;
 
-        foreach (var h in hits)
+        if (avoidanceTimer > 0f)
         {
-            if (h.transform == transform) continue;
-            Vector3 away = transform.position - h.transform.position;
-            float   d    = away.magnitude;
-            if (d > 0.001f) force += away.normalized / d;
+            avoidanceTimer -= Time.deltaTime;
+
+            Vector3 sideDirection =
+                Quaternion.Euler(
+                    0f,
+                    avoidanceAngle * avoidanceSide,
+                    0f
+                ) * wantedDirection;
+
+            return sideDirection.normalized;
         }
 
-        return force * separationStrength;
+        if (Physics.Raycast(
+            origin,
+            wantedDirection,
+            obstacleCheckDistance,
+            obstacleMask,
+            QueryTriggerInteraction.Ignore))
+        {
+            avoidanceSide =
+                Random.value > 0.5f ? 1 : -1;
+
+            avoidanceTimer = avoidanceDuration;
+
+            Vector3 sideDirection =
+                Quaternion.Euler(
+                    0f,
+                    avoidanceAngle * avoidanceSide,
+                    0f
+                ) * wantedDirection;
+
+            return sideDirection.normalized;
+        }
+
+        return wantedDirection;
     }
 
-    // ─── GIZMOS ─────────────────────────────────────────────────
-    void OnDrawGizmosSelected()
+    private void FacePosition(Vector3 targetPosition)
     {
-        Transform origin = eye ? eye : transform;
+        Vector3 direction =
+            targetPosition - transform.position;
 
-        // Con normal 360° (verde)
-        Gizmos.color = new Color(0f, 1f, 0f, 0.15f);
-        Gizmos.DrawWireSphere(origin.position, viewDistance);
+        direction.y = 0f;
 
-        // Con stealth (mov, mai mic)
-        float stealthDist = viewDistance * 0.4f;
-        float halfAngle   = viewAngle * 0.5f;
-        Gizmos.color = new Color(0.6f, 0f, 1f, 0.5f);
-        Vector3 leftDir  = Quaternion.Euler(0, -halfAngle, 0) * origin.forward;
-        Vector3 rightDir = Quaternion.Euler(0,  halfAngle, 0) * origin.forward;
-        Gizmos.DrawLine(origin.position, origin.position + leftDir  * stealthDist);
-        Gizmos.DrawLine(origin.position, origin.position + rightDir * stealthDist);
-        Gizmos.DrawLine(origin.position, origin.position + origin.forward * stealthDist);
+        FaceDirection(direction);
+    }
 
-        // Attack range (roșu)
-        Gizmos.color = new Color(1f, 0f, 0f, 0.4f);
-        Gizmos.DrawWireSphere(transform.position, attackDistance);
+    private void FaceDirection(Vector3 direction)
+    {
+        direction.y = 0f;
 
-        // Separation (galben)
-        Gizmos.color = new Color(1f, 1f, 0f, 0.3f);
-        Gizmos.DrawWireSphere(transform.position, separationRadius);
+        if (direction.sqrMagnitude <= 0.001f)
+            return;
 
-        // Patrol points (cyan)
-        if (patrolPoints == null || patrolPoints.Length == 0) return;
+        Quaternion desiredRotation = Quaternion.LookRotation(
+            direction.normalized,
+            Vector3.up
+        );
+
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            desiredRotation,
+            rotationSpeed * Time.deltaTime
+        );
+    }
+
+    private void UpdateAmbientAudio()
+    {
+        if (ambientAudio == null)
+            return;
+
+        bool isAggressive =
+            currentState == EnemyState.Chase ||
+            currentState == EnemyState.Attack;
+
+        float targetPitch = isAggressive
+            ? ambientRunPitch
+            : ambientIdlePitch;
+
+        ambientAudio.pitch = Mathf.Lerp(
+            ambientAudio.pitch,
+            targetPitch,
+            ambientPitchLerpSpeed * Time.deltaTime
+        );
+
+        if (!ambientAudio.isPlaying)
+            ambientAudio.Play();
+    }
+
+    private void SetIdleAnimation()
+    {
+        enemyAnimator?.ForceIdle();
+    }
+
+    private float FlatDistance(Vector3 first, Vector3 second)
+    {
+        first.y = 0f;
+        second.y = 0f;
+
+        return Vector3.Distance(first, second);
+    }
+
+    private bool HasPatrolPoints()
+    {
+        return patrolPoints != null &&
+            patrolPoints.Length > 0;
+    }
+
+    private EnemyState GetDefaultState()
+    {
+        return HasPatrolPoints() && canMove
+            ? EnemyState.Patrol
+            : EnemyState.Idle;
+    }
+
+    private void EnterState(EnemyState newState)
+    {
+        if (currentState == newState)
+            return;
+
+        currentState = newState;
+
+        stateTimer = 0f;
+        visibleTimer = 0f;
+        lostTargetTimer = 0f;
+        avoidanceTimer = 0f;
+
+        if (newState != EnemyState.Idle &&
+            newState != EnemyState.Search)
+        {
+            StopStationaryScan();
+        }
+
+        if (newState == EnemyState.Idle)
+        {
+            scanPauseTimer = Random.Range(
+                minScanPause,
+                maxScanPause
+            );
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (ambientAudio != null &&
+            ambientAudio.isPlaying)
+        {
+            ambientAudio.Stop();
+        }
+
+        StopStationaryScan();
+
+        laser?.TickLaser(false);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Transform viewOrigin =
+            eye != null ? eye : transform;
+
+        Gizmos.color = Color.yellow;
+
+        Gizmos.DrawWireSphere(
+            transform.position,
+            detectionRange
+        );
+
+        Vector3 leftEdge =
+            Quaternion.Euler(
+                0f,
+                -viewAngle * 0.5f,
+                0f
+            ) * transform.forward;
+
+        Vector3 rightEdge =
+            Quaternion.Euler(
+                0f,
+                viewAngle * 0.5f,
+                0f
+            ) * transform.forward;
+
+        Gizmos.color = Color.red;
+
+        Gizmos.DrawLine(
+            viewOrigin.position,
+            viewOrigin.position + leftEdge * detectionRange
+        );
+
+        Gizmos.DrawLine(
+            viewOrigin.position,
+            viewOrigin.position + rightEdge * detectionRange
+        );
+
         Gizmos.color = Color.cyan;
-        for (int i = 0; i < patrolPoints.Length; i++)
-        {
-            if (patrolPoints[i] == null) continue;
-            Gizmos.DrawSphere(patrolPoints[i].position, 0.2f);
-            int next = (i + 1) % patrolPoints.Length;
-            if (patrolPoints[next] != null)
-                Gizmos.DrawLine(patrolPoints[i].position, patrolPoints[next].position);
-        }
 
-        DrawViewCone(origin); // conul animat verde/galben/roșu după state
-    }
-
-    void DrawViewCone(Transform origin)
-    {
-        Color coneColor = currentState switch
-        {
-            State.Chase  => Color.yellow,
-            State.Attack => Color.red,
-            _            => Color.green
-        };
-
-        Gizmos.color = coneColor;
-        float halfAngle = viewAngle * 0.5f;
-        int   segments  = 30;
-
-        Gizmos.DrawLine(origin.position, origin.position + origin.forward * viewDistance);
-
-        Vector3 leftDir  = Quaternion.Euler(0, -halfAngle, 0) * origin.forward;
-        Vector3 rightDir = Quaternion.Euler(0,  halfAngle, 0) * origin.forward;
-        Gizmos.DrawLine(origin.position, origin.position + leftDir  * viewDistance);
-        Gizmos.DrawLine(origin.position, origin.position + rightDir * viewDistance);
-
-        Vector3 prev = origin.position + leftDir * viewDistance;
-        for (int i = 1; i <= segments; i++)
-        {
-            float   t    = i / (float)segments;
-            float   ang  = Mathf.Lerp(-halfAngle, halfAngle, t);
-            Vector3 d    = Quaternion.Euler(0, ang, 0) * origin.forward;
-            Vector3 next = origin.position + d * viewDistance;
-            Gizmos.DrawLine(prev, next);
-            prev = next;
-        }
+        Gizmos.DrawWireSphere(
+            transform.position,
+            closeDetectionRange
+        );
     }
 }

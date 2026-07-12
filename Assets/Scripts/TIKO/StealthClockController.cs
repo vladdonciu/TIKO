@@ -32,6 +32,9 @@ public class StealthCloakController : MonoBehaviour
     private bool isOnCooldown;
 
     public bool IsStealthAvailable => !isOnCooldown;
+    public bool IsStealthed => currentStealth >= 0.85f && !isOnCooldown;
+
+    public float StealthTimeRemaining => isOnCooldown ? 0f : Mathf.Max(0f, maxStealthDuration - stealthTimer);
 
     private void Awake()
     {
