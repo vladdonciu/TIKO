@@ -10,152 +10,249 @@ public class PlayerController25D_Anim : MonoBehaviour
     [SerializeField] private Transform wheel;
 
     [Header("Move")]
-    [SerializeField] private float moveSpeed             = 5.5f;
-    [SerializeField] private float acceleration          = 18f;
-    [SerializeField] private float deceleration          = 22f;
-    [SerializeField] private bool  rotateToMoveDirection = true;
+    [SerializeField] private float moveSpeed = 5.5f;
+    [SerializeField] private float acceleration = 18f;
+    [SerializeField] private float deceleration = 22f;
+    [SerializeField] private bool rotateToMoveDirection = true;
     [SerializeField] private float crouchSpeedMultiplier = 0.5f;
+    [SerializeField] private float pushPullSpeedMultiplier = 0.4f;
 
     [Header("Jump / Gravity")]
-    [SerializeField] private bool  enableJump  = true;
-    [SerializeField] private float gravity     = -25f;
-    [SerializeField] private float jumpHeight  = 1.2f;
-    [SerializeField] private int   extraJumps  = 1;
+    [SerializeField] private bool enableJump = true;
+    [SerializeField] private float gravity = -25f;
+    [SerializeField] private float jumpHeight = 1.2f;
+    [SerializeField] private int extraJumps = 1;
 
     [Header("Tilt")]
-    [SerializeField] private bool  enableMovementTilt    = true;
-    [SerializeField] private float maxTiltAngle          = 8f;
-    [SerializeField] private float tiltSpeed             = 10f;
-    [SerializeField] private float crouchTiltMultiplier  = 0.3f;
+    [SerializeField] private bool enableMovementTilt = true;
+    [SerializeField] private float maxTiltAngle = 8f;
+    [SerializeField] private float tiltSpeed = 10f;
+    [SerializeField] private float crouchTiltMultiplier = 0.3f;
 
     [Header("Idle Random (State Machine)")]
-    [SerializeField] private bool    enableIdleRandom    = true;
-    [SerializeField] private Vector2 idleChangeInterval  = new Vector2(3f, 7f);
-    [SerializeField] private float   idleSpeedEpsilon    = 0.1f;
+    [SerializeField] private bool enableIdleRandom = true;
+    [SerializeField] private Vector2 idleChangeInterval = new Vector2(3f, 7f);
+    [SerializeField] private float idleSpeedEpsilon = 0.1f;
 
     [Header("Wheel Spin")]
-    [SerializeField] private float   wheelRadius          = 0.2f;
-    [SerializeField] private float   wheelSpinMultiplier  = 1f;
-    [SerializeField] private Vector3 wheelLocalAxis       = Vector3.right;
+    [SerializeField] private float wheelRadius = 0.2f;
+    [SerializeField] private float wheelSpinMultiplier = 1f;
+    [SerializeField] private Vector3 wheelLocalAxis = Vector3.right;
 
     [Header("Debug")]
-    [SerializeField] private bool debugParams          = false;
+    [SerializeField] private bool debugParams = false;
     [SerializeField] private bool crouchReleaseFailsafe = true;
+    [SerializeField] private bool enableDebugStateKeys = true;
 
-    // ── Componente ───────────────────────────────────────────────
+    // Componente
     private CharacterController cc;
 
-    // ── State ────────────────────────────────────────────────────
+    // Movement state
     private Vector2 moveInput;
     private Vector3 horizontalVelocity;
-    private float   verticalVelocity;
-    private bool    crouchHeld;
-    private int     jumpsLeft;
-    private float   tiltAngle;
+    private float verticalVelocity;
+    private bool crouchHeld;
+    private int jumpsLeft;
+    private float tiltAngle;
 
-    // ── Idle random ──────────────────────────────────────────────
+    // Debug / animation state
+    private bool isDead;
+    private bool isPushing;
+    private bool isPulling;
+
+    // Idle random
     private float idleTimer;
     private float nextIdleChange;
-    private int   lastIdleSlot = -1;
+    private int lastIdleSlot = -1;
 
-    // ── Wheel ────────────────────────────────────────────────────
+    // Wheel
     private Quaternion wheelInitialLocalRotation;
-    private float      wheelSpinAngleAccum;
+    private float wheelSpinAngleAccum;
 
-    // ── Platform ─────────────────────────────────────────────────
+    // Moving platform
     private MovingPlatform currentPlatform;
 
-    // ── Proprietate publică citită de inamici ────────────────────
     public bool IsStealth => crouchHeld;
 
-    // ── Animator hashes ──────────────────────────────────────────
-    private static readonly int SpeedHash    = Animator.StringToHash("Speed");
+    // Animator hashes
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int GroundedHash = Animator.StringToHash("IsGrounded");
-    private static readonly int CrouchHash   = Animator.StringToHash("IsCrouch");
-    private static readonly int JumpHash     = Animator.StringToHash("Jump");
+    private static readonly int CrouchHash = Animator.StringToHash("IsCrouch");
+    private static readonly int JumpHash = Animator.StringToHash("Jump");
     private static readonly int IdleSlotHash = Animator.StringToHash("IdleSlot");
     private static readonly int IdleNextHash = Animator.StringToHash("IdleNext");
 
-    // ─── AWAKE ───────────────────────────────────────────────────
+    private static readonly int IsDeadHash = Animator.StringToHash("IsDead");
+    private static readonly int IsPushingHash = Animator.StringToHash("IsPushing");
+    private static readonly int IsPullingHash = Animator.StringToHash("IsPulling");
+    private static readonly int DeathTriggerHash = Animator.StringToHash("DeathTrigger");
+
     void Awake()
     {
-        cc        = GetComponent<CharacterController>();
+        cc = GetComponent<CharacterController>();
         jumpsLeft = extraJumps;
 
-        if (!animator)        animator        = GetComponentInChildren<Animator>();
-        if (!visualTransform) visualTransform = animator ? animator.transform : transform;
-        if (wheel)            wheelInitialLocalRotation = wheel.localRotation;
+        if (!animator)
+            animator = GetComponentInChildren<Animator>();
+
+        if (!visualTransform)
+            visualTransform = animator ? animator.transform : transform;
+
+        if (wheel)
+            wheelInitialLocalRotation = wheel.localRotation;
 
         nextIdleChange = Random.Range(idleChangeInterval.x, idleChangeInterval.y);
     }
 
-    // ─── START ───────────────────────────────────────────────────
     void Start()
     {
         if (!animator || !animator.runtimeAnimatorController)
-            Debug.LogError("[TIKO] Animator sau Controller lipsă! Animațiile nu vor merge.");
+        {
+            Debug.LogError("[TIKO] Animator sau Animator Controller lipsă.");
+        }
         else if (debugParams)
+        {
             Debug.Log($"[TIKO] Animator: {animator.name} | Controller: {animator.runtimeAnimatorController.name}");
+        }
     }
 
-    // ─── UPDATE ──────────────────────────────────────────────────
     void Update()
     {
         Vector3 platformDelta = Vector3.zero;
+
         if (currentPlatform != null)
             platformDelta = currentPlatform.Velocity * Time.deltaTime;
+
         currentPlatform = null;
 
+        HandleDebugStateInput();
         HandleCrouchFailsafe();
+
         HandleMovement(out float planarSpeed, out float speed01);
         HandleGravity();
         ApplyMotion(platformDelta);
+
         HandleRotation();
         UpdateAnimator(speed01);
         HandleTilt(speed01);
         SpinWheel(planarSpeed);
     }
 
-    // ─── CROUCH FAILSAFE ─────────────────────────────────────────
+    // Taste debug: 0 = Dead, 9 = Pushing, 8 = Pulling
+    void HandleDebugStateInput()
+    {
+        if (!enableDebugStateKeys || Keyboard.current == null)
+            return;
+
+        if (Keyboard.current.digit0Key.wasPressedThisFrame)
+        {
+            isDead = !isDead;
+
+            if (isDead)
+            {
+                isPushing = false;
+                isPulling = false;
+                animator?.SetTrigger(DeathTriggerHash);
+            }
+
+            if (debugParams)
+                Debug.Log($"[TIKO] IsDead: {isDead}");
+        }
+
+        // Nu permitem Push/Pull în aer sau cât timp e mort.
+        bool canTogglePushPull = cc.isGrounded && !isDead;
+
+        if (Keyboard.current.digit9Key.wasPressedThisFrame && canTogglePushPull)
+        {
+            isPushing = !isPushing;
+
+            if (isPushing)
+                isPulling = false;
+
+            if (debugParams)
+                Debug.Log($"[TIKO] IsPushing: {isPushing}");
+        }
+
+        if (Keyboard.current.digit8Key.wasPressedThisFrame && canTogglePushPull)
+        {
+            isPulling = !isPulling;
+
+            if (isPulling)
+                isPushing = false;
+
+            if (debugParams)
+                Debug.Log($"[TIKO] IsPulling: {isPulling}");
+        }
+    }
+
     void HandleCrouchFailsafe()
     {
-        if (!crouchReleaseFailsafe || !crouchHeld) return;
+        if (!crouchReleaseFailsafe || !crouchHeld)
+            return;
 
-        bool shiftHeld = Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed;
+        bool shiftHeld =
+            Keyboard.current != null &&
+            Keyboard.current.leftShiftKey.isPressed;
 
-        // Suport gamepad opțional
-        bool gamepadHeld = Gamepad.current != null && Gamepad.current.leftShoulder.isPressed;
+        bool gamepadHeld =
+            Gamepad.current != null &&
+            Gamepad.current.leftShoulder.isPressed;
 
         if (!shiftHeld && !gamepadHeld)
             crouchHeld = false;
     }
 
-    // ─── MOVEMENT ────────────────────────────────────────────────
     void HandleMovement(out float planarSpeed, out float speed01)
     {
         Vector3 desiredDir = new Vector3(moveInput.x, 0f, moveInput.y);
-        if (desiredDir.sqrMagnitude > 1f) desiredDir.Normalize();
 
-        float targetSpeed = moveSpeed * (crouchHeld ? crouchSpeedMultiplier : 1f);
-        Vector3 desiredVel = desiredDir * targetSpeed;
+        if (desiredDir.sqrMagnitude > 1f)
+            desiredDir.Normalize();
 
-        float accel = (desiredVel.sqrMagnitude > 0.001f) ? acceleration : deceleration;
+        float speedMultiplier = 1f;
+
+        if (crouchHeld)
+            speedMultiplier = crouchSpeedMultiplier;
+
+        if (isPushing || isPulling)
+            speedMultiplier = pushPullSpeedMultiplier;
+
+        // La Dead, Tiko nu se mai mișcă.
+        if (isDead)
+            speedMultiplier = 0f;
+
+        float targetSpeed = moveSpeed * speedMultiplier;
+        Vector3 desiredVelocity = desiredDir * targetSpeed;
+
+        float currentAcceleration =
+            desiredVelocity.sqrMagnitude > 0.001f
+                ? acceleration
+                : deceleration;
+
         horizontalVelocity = Vector3.MoveTowards(
-            horizontalVelocity, desiredVel, accel * Time.deltaTime);
+            horizontalVelocity,
+            desiredVelocity,
+            currentAcceleration * Time.deltaTime
+        );
 
-        planarSpeed = new Vector2(horizontalVelocity.x, horizontalVelocity.z).magnitude;
-        speed01     = Mathf.Clamp01(planarSpeed / moveSpeed);
+        planarSpeed = new Vector2(
+            horizontalVelocity.x,
+            horizontalVelocity.z
+        ).magnitude;
+
+        speed01 = Mathf.Clamp01(planarSpeed / moveSpeed);
     }
 
-    // ─── GRAVITY ─────────────────────────────────────────────────
     void HandleGravity()
     {
         bool grounded = cc.isGrounded;
 
         if (grounded)
         {
-            if (verticalVelocity < 0f) verticalVelocity = -2f;
-            jumpsLeft = extraJumps;          // reset double jump la aterizare
+            if (verticalVelocity < 0f)
+                verticalVelocity = -2f;
+
+            jumpsLeft = extraJumps;
         }
         else
         {
@@ -163,95 +260,144 @@ public class PlayerController25D_Anim : MonoBehaviour
         }
     }
 
-    // ─── APPLY MOTION ────────────────────────────────────────────
     void ApplyMotion(Vector3 platformDelta)
     {
-        Vector3 motion = (horizontalVelocity + new Vector3(0f, verticalVelocity, 0f))
-                         * Time.deltaTime + platformDelta;
+        Vector3 motion =
+            (horizontalVelocity + new Vector3(0f, verticalVelocity, 0f))
+            * Time.deltaTime
+            + platformDelta;
+
         cc.Move(motion);
     }
 
-    // ─── ROTATION ────────────────────────────────────────────────
     void HandleRotation()
     {
-        if (!rotateToMoveDirection) return;
+        if (!rotateToMoveDirection || isDead)
+            return;
 
         Vector3 desiredDir = new Vector3(moveInput.x, 0f, moveInput.y);
-        if (desiredDir.sqrMagnitude < 0.001f) return;
 
-        Quaternion targetRot = Quaternion.LookRotation(desiredDir, Vector3.up);
-        transform.rotation   = Quaternion.Slerp(transform.rotation, targetRot, 18f * Time.deltaTime);
+        if (desiredDir.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(desiredDir, Vector3.up);
+
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRotation,
+            18f * Time.deltaTime
+        );
     }
 
-    // ─── ANIMATOR ────────────────────────────────────────────────
     void UpdateAnimator(float speed01)
     {
-        if (!animator || !animator.runtimeAnimatorController) return;
+        if (!animator || !animator.runtimeAnimatorController)
+            return;
 
         bool grounded = cc.isGrounded;
 
-        animator.SetFloat(SpeedHash,    speed01, 0.05f, Time.deltaTime);
-        animator.SetBool(GroundedHash,  grounded);
-        animator.SetBool(CrouchHash,    crouchHeld);
+        animator.SetFloat(SpeedHash, speed01, 0.05f, Time.deltaTime);
+        animator.SetBool(GroundedHash, grounded);
+        animator.SetBool(CrouchHash, crouchHeld);
+
+        animator.SetBool(IsDeadHash, isDead);
+        animator.SetBool(IsPushingHash, isPushing);
+        animator.SetBool(IsPullingHash, isPulling);
 
         TickIdleStateMachine(grounded, speed01);
     }
 
-    // ─── IDLE RANDOM ─────────────────────────────────────────────
     void TickIdleStateMachine(bool grounded, float speed01)
     {
-        if (!enableIdleRandom || !grounded || crouchHeld || speed01 >= idleSpeedEpsilon)
+        if (!enableIdleRandom ||
+            !grounded ||
+            crouchHeld ||
+            isDead ||
+            isPushing ||
+            isPulling ||
+            speed01 >= idleSpeedEpsilon)
         {
             idleTimer = 0f;
             return;
         }
 
         idleTimer += Time.deltaTime;
-        if (idleTimer < nextIdleChange) return;
+
+        if (idleTimer < nextIdleChange)
+            return;
 
         int slot = Random.Range(0, 3);
+
         if (slot == lastIdleSlot)
             slot = (slot + Random.Range(1, 3)) % 3;
 
         lastIdleSlot = slot;
+
         animator.SetInteger(IdleSlotHash, slot);
         animator.SetTrigger(IdleNextHash);
 
-        if (debugParams) Debug.Log($"[TIKO] Idle slot={slot}");
+        if (debugParams)
+            Debug.Log($"[TIKO] Idle slot = {slot}");
 
-        idleTimer      = 0f;
-        nextIdleChange = Random.Range(idleChangeInterval.x, idleChangeInterval.y);
+        idleTimer = 0f;
+        nextIdleChange = Random.Range(
+            idleChangeInterval.x,
+            idleChangeInterval.y
+        );
     }
 
-    // ─── TILT ────────────────────────────────────────────────────
     void HandleTilt(float speed01)
     {
-        if (!enableMovementTilt || !visualTransform) return;
+        if (!enableMovementTilt || !visualTransform)
+            return;
 
-        bool grounded    = cc.isGrounded;
-        float tiltMult   = crouchHeld ? crouchTiltMultiplier : 1f;
-        float targetTilt = -maxTiltAngle * speed01 * tiltMult;
-        if (!grounded) targetTilt *= 0.3f;
+        bool grounded = cc.isGrounded;
 
-        tiltAngle = Mathf.Lerp(tiltAngle, targetTilt, tiltSpeed * Time.deltaTime);
+        float tiltMultiplier = crouchHeld
+            ? crouchTiltMultiplier
+            : 1f;
+
+        float targetTilt = -maxTiltAngle * speed01 * tiltMultiplier;
+
+        if (!grounded)
+            targetTilt *= 0.3f;
+
+        if (isDead)
+            targetTilt = 0f;
+
+        tiltAngle = Mathf.Lerp(
+            tiltAngle,
+            targetTilt,
+            tiltSpeed * Time.deltaTime
+        );
+
         visualTransform.localRotation = Quaternion.Euler(tiltAngle, 0f, 0f);
     }
 
-    // ─── WHEEL SPIN ──────────────────────────────────────────────
+    // Important: metoda NU schimbă deloc localScale.
     void SpinWheel(float planarSpeed)
     {
-        if (!wheel) return;
+        if (!wheel)
+            return;
 
-        float angularDeg = (wheelRadius > 0.0001f)
-            ? (planarSpeed / wheelRadius) * Mathf.Rad2Deg * Time.deltaTime * wheelSpinMultiplier
+        float angularDegrees = wheelRadius > 0.0001f
+            ? (planarSpeed / wheelRadius)
+              * Mathf.Rad2Deg
+              * Time.deltaTime
+              * wheelSpinMultiplier
             : 0f;
 
-        wheelSpinAngleAccum = (wheelSpinAngleAccum + angularDeg) % 360f; // evită overflow
-        Quaternion spin     = Quaternion.AngleAxis(wheelSpinAngleAccum, wheelLocalAxis.normalized);
+        wheelSpinAngleAccum =
+            (wheelSpinAngleAccum + angularDegrees) % 360f;
+
+        Quaternion spin = Quaternion.AngleAxis(
+            wheelSpinAngleAccum,
+            wheelLocalAxis.normalized
+        );
+
         wheel.localRotation = wheelInitialLocalRotation * spin;
     }
 
-    // ─── INPUT CALLBACKS ─────────────────────────────────────────
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
@@ -259,34 +405,52 @@ public class PlayerController25D_Anim : MonoBehaviour
 
     public void OnCrouch(InputValue value)
     {
+        if (isDead || isPushing || isPulling)
+            return;
+
         crouchHeld = value.isPressed;
-        if (debugParams) Debug.Log($"[TIKO] Crouch/Stealth: {crouchHeld}");
+
+        if (debugParams)
+            Debug.Log($"[TIKO] Crouch/Stealth: {crouchHeld}");
     }
 
     public void OnJump(InputValue value)
     {
-        if (!enableJump || !value.isPressed || crouchHeld) return;
+        if (!enableJump ||
+            !value.isPressed ||
+            crouchHeld ||
+            isPushing ||
+            isPulling ||
+            isDead)
+        {
+            return;
+        }
 
-        float jumpVel = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        float jumpVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
         if (cc.isGrounded)
         {
-            verticalVelocity = jumpVel;
+            verticalVelocity = jumpVelocity;
             animator?.SetTrigger(JumpHash);
-            if (debugParams) Debug.Log("[TIKO] Jump!");
+
+            if (debugParams)
+                Debug.Log("[TIKO] Jump!");
+
             return;
         }
 
         if (jumpsLeft > 0)
         {
             jumpsLeft--;
-            verticalVelocity = jumpVel;
+
+            verticalVelocity = jumpVelocity;
             animator?.SetTrigger(JumpHash);
-            if (debugParams) Debug.Log($"[TIKO] Double jump! ({jumpsLeft} left)");
+
+            if (debugParams)
+                Debug.Log($"[TIKO] Double Jump! ({jumpsLeft} left)");
         }
     }
 
-    // ─── PLATFORM ────────────────────────────────────────────────
     void OnControllerColliderHit(ControllerColliderHit hit)
     {
         if (hit.collider.CompareTag("MovingPlatform"))
