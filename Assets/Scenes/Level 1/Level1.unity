@@ -110579,7 +110579,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4096
   grabRange: 1.4
-  desiredBoxDistance: 0.45
+  desiredBoxDistance: 0.9
   positionTolerance: 0.03
   maxGrabDistance: 2.2
   boxCorrectionSpeed: 8

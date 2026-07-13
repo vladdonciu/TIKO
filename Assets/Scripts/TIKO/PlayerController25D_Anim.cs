@@ -17,6 +17,15 @@ public class PlayerController25D_Anim : MonoBehaviour
     [SerializeField] private float crouchSpeedMultiplier = 0.5f;
     [SerializeField] private float pushPullSpeedMultiplier = 0.4f;
 
+    [Header("Push / Pull Visual")]
+    [Tooltip("Mută modelul lui Tiko spre cutie în timpul Push.")]
+    [SerializeField] private float pushVisualOffset = 0.22f;
+
+    [Tooltip("Mută modelul lui Tiko spre cutie în timpul Pull.")]
+    [SerializeField] private float pullVisualOffset = 0.42f;
+
+    [SerializeField] private float pushPullVisualOffsetSpeed = 12f;
+
     [Header("Jump / Gravity")]
     [SerializeField] private bool enableJump = true;
     [SerializeField] private float gravity = -25f;
@@ -58,6 +67,9 @@ public class PlayerController25D_Anim : MonoBehaviour
     private bool isPulling;
     private bool pushPullActive;
 
+    private Vector3 visualInitialLocalPosition;
+    private float pushPullVisualOffsetCurrent;
+
     private float idleTimer;
     private float nextIdleChange;
     private int lastIdleSlot = -1;
@@ -69,8 +81,6 @@ public class PlayerController25D_Anim : MonoBehaviour
 
     public bool IsStealth => crouchHeld;
     public bool IsBusy { get; set; }
-
-    // Citit de PushPullController.
     public Vector2 MoveInput => moveInput;
 
     private static readonly int SpeedHash =
@@ -113,6 +123,9 @@ public class PlayerController25D_Anim : MonoBehaviour
 
         if (!visualTransform)
             visualTransform = animator ? animator.transform : transform;
+
+        if (visualTransform)
+            visualInitialLocalPosition = visualTransform.localPosition;
 
         if (wheel)
             wheelInitialLocalRotation = wheel.localRotation;
@@ -159,6 +172,7 @@ public class PlayerController25D_Anim : MonoBehaviour
         HandleRotation();
         UpdateAnimator(speed01);
         HandleTilt(speed01);
+        UpdatePushPullVisualOffset();
         SpinWheel(planarSpeed);
     }
 
@@ -247,9 +261,7 @@ public class PlayerController25D_Anim : MonoBehaviour
 
     private void HandleGravity()
     {
-        bool grounded = cc.isGrounded;
-
-        if (grounded)
+        if (cc.isGrounded)
         {
             if (verticalVelocity < 0f)
                 verticalVelocity = -2f;
@@ -374,8 +386,6 @@ public class PlayerController25D_Anim : MonoBehaviour
         if (!enableMovementTilt || !visualTransform)
             return;
 
-        bool grounded = cc.isGrounded;
-
         float tiltMultiplier = crouchHeld
             ? crouchTiltMultiplier
             : 1f;
@@ -383,7 +393,7 @@ public class PlayerController25D_Anim : MonoBehaviour
         float targetTilt =
             -maxTiltAngle * speed01 * tiltMultiplier;
 
-        if (!grounded)
+        if (!cc.isGrounded)
             targetTilt *= 0.3f;
 
         if (isDead)
@@ -400,6 +410,34 @@ public class PlayerController25D_Anim : MonoBehaviour
             0f,
             0f
         );
+    }
+
+    private void UpdatePushPullVisualOffset()
+    {
+        if (!visualTransform)
+            return;
+
+        float targetOffset = 0f;
+
+        if (pushPullActive)
+        {
+            if (isPulling)
+                targetOffset = pullVisualOffset;
+            else if (isPushing)
+                targetOffset = pushVisualOffset;
+            else
+                targetOffset = pushVisualOffset;
+        }
+
+        pushPullVisualOffsetCurrent = Mathf.Lerp(
+            pushPullVisualOffsetCurrent,
+            targetOffset,
+            pushPullVisualOffsetSpeed * Time.deltaTime
+        );
+
+        visualTransform.localPosition =
+            visualInitialLocalPosition +
+            Vector3.back * pushPullVisualOffsetCurrent;
     }
 
     private void SpinWheel(float planarSpeed)
