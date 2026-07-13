@@ -42,12 +42,10 @@ public class PlayerController25D_Anim : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugParams = false;
     [SerializeField] private bool crouchReleaseFailsafe = true;
-    [SerializeField] private bool enableDebugStateKeys = true;
+    [SerializeField] private bool enableDebugStateKeys = false;
 
-    // Componente
     private CharacterController cc;
 
-    // Movement state
     private Vector2 moveInput;
     private Vector3 horizontalVelocity;
     private float verticalVelocity;
@@ -55,39 +53,57 @@ public class PlayerController25D_Anim : MonoBehaviour
     private int jumpsLeft;
     private float tiltAngle;
 
-    // Debug / animation state
     private bool isDead;
     private bool isPushing;
     private bool isPulling;
+    private bool pushPullActive;
 
-    // Idle random
     private float idleTimer;
     private float nextIdleChange;
     private int lastIdleSlot = -1;
 
-    // Wheel
     private Quaternion wheelInitialLocalRotation;
     private float wheelSpinAngleAccum;
 
-    // Moving platform
     private MovingPlatform currentPlatform;
 
     public bool IsStealth => crouchHeld;
+    public bool IsBusy { get; set; }
 
-    // Animator hashes
-    private static readonly int SpeedHash = Animator.StringToHash("Speed");
-    private static readonly int GroundedHash = Animator.StringToHash("IsGrounded");
-    private static readonly int CrouchHash = Animator.StringToHash("IsCrouch");
-    private static readonly int JumpHash = Animator.StringToHash("Jump");
-    private static readonly int IdleSlotHash = Animator.StringToHash("IdleSlot");
-    private static readonly int IdleNextHash = Animator.StringToHash("IdleNext");
+    // Citit de PushPullController.
+    public Vector2 MoveInput => moveInput;
 
-    private static readonly int IsDeadHash = Animator.StringToHash("IsDead");
-    private static readonly int IsPushingHash = Animator.StringToHash("IsPushing");
-    private static readonly int IsPullingHash = Animator.StringToHash("IsPulling");
-    private static readonly int DeathTriggerHash = Animator.StringToHash("DeathTrigger");
+    private static readonly int SpeedHash =
+        Animator.StringToHash("Speed");
 
-    void Awake()
+    private static readonly int GroundedHash =
+        Animator.StringToHash("IsGrounded");
+
+    private static readonly int CrouchHash =
+        Animator.StringToHash("IsCrouch");
+
+    private static readonly int JumpHash =
+        Animator.StringToHash("Jump");
+
+    private static readonly int IdleSlotHash =
+        Animator.StringToHash("IdleSlot");
+
+    private static readonly int IdleNextHash =
+        Animator.StringToHash("IdleNext");
+
+    private static readonly int IsDeadHash =
+        Animator.StringToHash("IsDead");
+
+    private static readonly int IsPushingHash =
+        Animator.StringToHash("IsPushing");
+
+    private static readonly int IsPullingHash =
+        Animator.StringToHash("IsPulling");
+
+    private static readonly int DeathTriggerHash =
+        Animator.StringToHash("DeathTrigger");
+
+    private void Awake()
     {
         cc = GetComponent<CharacterController>();
         jumpsLeft = extraJumps;
@@ -101,22 +117,30 @@ public class PlayerController25D_Anim : MonoBehaviour
         if (wheel)
             wheelInitialLocalRotation = wheel.localRotation;
 
-        nextIdleChange = Random.Range(idleChangeInterval.x, idleChangeInterval.y);
+        nextIdleChange = Random.Range(
+            idleChangeInterval.x,
+            idleChangeInterval.y
+        );
     }
 
-    void Start()
+    private void Start()
     {
         if (!animator || !animator.runtimeAnimatorController)
         {
-            Debug.LogError("[TIKO] Animator sau Animator Controller lipsă.");
+            Debug.LogError(
+                "[TIKO] Animator sau Animator Controller lipsă."
+            );
         }
         else if (debugParams)
         {
-            Debug.Log($"[TIKO] Animator: {animator.name} | Controller: {animator.runtimeAnimatorController.name}");
+            Debug.Log(
+                $"[TIKO] Animator: {animator.name} | " +
+                $"Controller: {animator.runtimeAnimatorController.name}"
+            );
         }
     }
 
-    void Update()
+    private void Update()
     {
         Vector3 platformDelta = Vector3.zero;
 
@@ -138,8 +162,7 @@ public class PlayerController25D_Anim : MonoBehaviour
         SpinWheel(planarSpeed);
     }
 
-    // Taste debug: 0 = Dead, 9 = Pushing, 8 = Pulling
-    void HandleDebugStateInput()
+    private void HandleDebugStateInput()
     {
         if (!enableDebugStateKeys || Keyboard.current == null)
             return;
@@ -150,42 +173,16 @@ public class PlayerController25D_Anim : MonoBehaviour
 
             if (isDead)
             {
-                isPushing = false;
-                isPulling = false;
+                SetPushPullActive(false);
                 animator?.SetTrigger(DeathTriggerHash);
             }
 
             if (debugParams)
                 Debug.Log($"[TIKO] IsDead: {isDead}");
         }
-
-        // Nu permitem Push/Pull în aer sau cât timp e mort.
-        bool canTogglePushPull = cc.isGrounded && !isDead;
-
-        if (Keyboard.current.digit9Key.wasPressedThisFrame && canTogglePushPull)
-        {
-            isPushing = !isPushing;
-
-            if (isPushing)
-                isPulling = false;
-
-            if (debugParams)
-                Debug.Log($"[TIKO] IsPushing: {isPushing}");
-        }
-
-        if (Keyboard.current.digit8Key.wasPressedThisFrame && canTogglePushPull)
-        {
-            isPulling = !isPulling;
-
-            if (isPulling)
-                isPushing = false;
-
-            if (debugParams)
-                Debug.Log($"[TIKO] IsPulling: {isPulling}");
-        }
     }
 
-    void HandleCrouchFailsafe()
+    private void HandleCrouchFailsafe()
     {
         if (!crouchReleaseFailsafe || !crouchHeld)
             return;
@@ -202,9 +199,15 @@ public class PlayerController25D_Anim : MonoBehaviour
             crouchHeld = false;
     }
 
-    void HandleMovement(out float planarSpeed, out float speed01)
+    private void HandleMovement(
+        out float planarSpeed,
+        out float speed01)
     {
-        Vector3 desiredDir = new Vector3(moveInput.x, 0f, moveInput.y);
+        Vector3 desiredDir = new Vector3(
+            moveInput.x,
+            0f,
+            moveInput.y
+        );
 
         if (desiredDir.sqrMagnitude > 1f)
             desiredDir.Normalize();
@@ -214,10 +217,9 @@ public class PlayerController25D_Anim : MonoBehaviour
         if (crouchHeld)
             speedMultiplier = crouchSpeedMultiplier;
 
-        if (isPushing || isPulling)
+        if (pushPullActive)
             speedMultiplier = pushPullSpeedMultiplier;
 
-        // La Dead, Tiko nu se mai mișcă.
         if (isDead)
             speedMultiplier = 0f;
 
@@ -243,7 +245,7 @@ public class PlayerController25D_Anim : MonoBehaviour
         speed01 = Mathf.Clamp01(planarSpeed / moveSpeed);
     }
 
-    void HandleGravity()
+    private void HandleGravity()
     {
         bool grounded = cc.isGrounded;
 
@@ -260,7 +262,7 @@ public class PlayerController25D_Anim : MonoBehaviour
         }
     }
 
-    void ApplyMotion(Vector3 platformDelta)
+    private void ApplyMotion(Vector3 platformDelta)
     {
         Vector3 motion =
             (horizontalVelocity + new Vector3(0f, verticalVelocity, 0f))
@@ -270,17 +272,29 @@ public class PlayerController25D_Anim : MonoBehaviour
         cc.Move(motion);
     }
 
-    void HandleRotation()
+    private void HandleRotation()
     {
-        if (!rotateToMoveDirection || isDead)
+        if (
+            !rotateToMoveDirection ||
+            isDead ||
+            pushPullActive)
+        {
             return;
+        }
 
-        Vector3 desiredDir = new Vector3(moveInput.x, 0f, moveInput.y);
+        Vector3 desiredDir = new Vector3(
+            moveInput.x,
+            0f,
+            moveInput.y
+        );
 
         if (desiredDir.sqrMagnitude < 0.001f)
             return;
 
-        Quaternion targetRotation = Quaternion.LookRotation(desiredDir, Vector3.up);
+        Quaternion targetRotation = Quaternion.LookRotation(
+            desiredDir,
+            Vector3.up
+        );
 
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
@@ -289,17 +303,22 @@ public class PlayerController25D_Anim : MonoBehaviour
         );
     }
 
-    void UpdateAnimator(float speed01)
+    private void UpdateAnimator(float speed01)
     {
         if (!animator || !animator.runtimeAnimatorController)
             return;
 
         bool grounded = cc.isGrounded;
 
-        animator.SetFloat(SpeedHash, speed01, 0.05f, Time.deltaTime);
+        animator.SetFloat(
+            SpeedHash,
+            speed01,
+            0.05f,
+            Time.deltaTime
+        );
+
         animator.SetBool(GroundedHash, grounded);
         animator.SetBool(CrouchHash, crouchHeld);
-
         animator.SetBool(IsDeadHash, isDead);
         animator.SetBool(IsPushingHash, isPushing);
         animator.SetBool(IsPullingHash, isPulling);
@@ -307,9 +326,12 @@ public class PlayerController25D_Anim : MonoBehaviour
         TickIdleStateMachine(grounded, speed01);
     }
 
-    void TickIdleStateMachine(bool grounded, float speed01)
+    private void TickIdleStateMachine(
+        bool grounded,
+        float speed01)
     {
-        if (!enableIdleRandom ||
+        if (
+            !enableIdleRandom ||
             !grounded ||
             crouchHeld ||
             isDead ||
@@ -340,13 +362,14 @@ public class PlayerController25D_Anim : MonoBehaviour
             Debug.Log($"[TIKO] Idle slot = {slot}");
 
         idleTimer = 0f;
+
         nextIdleChange = Random.Range(
             idleChangeInterval.x,
             idleChangeInterval.y
         );
     }
 
-    void HandleTilt(float speed01)
+    private void HandleTilt(float speed01)
     {
         if (!enableMovementTilt || !visualTransform)
             return;
@@ -357,7 +380,8 @@ public class PlayerController25D_Anim : MonoBehaviour
             ? crouchTiltMultiplier
             : 1f;
 
-        float targetTilt = -maxTiltAngle * speed01 * tiltMultiplier;
+        float targetTilt =
+            -maxTiltAngle * speed01 * tiltMultiplier;
 
         if (!grounded)
             targetTilt *= 0.3f;
@@ -371,11 +395,14 @@ public class PlayerController25D_Anim : MonoBehaviour
             tiltSpeed * Time.deltaTime
         );
 
-        visualTransform.localRotation = Quaternion.Euler(tiltAngle, 0f, 0f);
+        visualTransform.localRotation = Quaternion.Euler(
+            tiltAngle,
+            0f,
+            0f
+        );
     }
 
-    // Important: metoda NU schimbă deloc localScale.
-    void SpinWheel(float planarSpeed)
+    private void SpinWheel(float planarSpeed)
     {
         if (!wheel)
             return;
@@ -405,8 +432,15 @@ public class PlayerController25D_Anim : MonoBehaviour
 
     public void OnCrouch(InputValue value)
     {
-        if (isDead || isPushing || isPulling)
+        if (
+            isDead ||
+            isPushing ||
+            isPulling ||
+            pushPullActive ||
+            IsBusy)
+        {
             return;
+        }
 
         crouchHeld = value.isPressed;
 
@@ -416,17 +450,20 @@ public class PlayerController25D_Anim : MonoBehaviour
 
     public void OnJump(InputValue value)
     {
-        if (!enableJump ||
+        if (
+            !enableJump ||
             !value.isPressed ||
             crouchHeld ||
-            isPushing ||
-            isPulling ||
-            isDead)
+            pushPullActive ||
+            isDead ||
+            IsBusy)
         {
             return;
         }
 
-        float jumpVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        float jumpVelocity = Mathf.Sqrt(
+            jumpHeight * -2f * gravity
+        );
 
         if (cc.isGrounded)
         {
@@ -447,13 +484,45 @@ public class PlayerController25D_Anim : MonoBehaviour
             animator?.SetTrigger(JumpHash);
 
             if (debugParams)
-                Debug.Log($"[TIKO] Double Jump! ({jumpsLeft} left)");
+            {
+                Debug.Log(
+                    $"[TIKO] Double Jump! ({jumpsLeft} left)"
+                );
+            }
         }
     }
 
-    void OnControllerColliderHit(ControllerColliderHit hit)
+    public void SetPushPullActive(bool active)
+    {
+        pushPullActive = active;
+
+        if (!active)
+        {
+            isPushing = false;
+            isPulling = false;
+        }
+    }
+
+    public void SetPushPullAnimation(bool pushing, bool pulling)
+    {
+        if (isDead || IsBusy || !pushPullActive)
+        {
+            isPushing = false;
+            isPulling = false;
+            return;
+        }
+
+        isPushing = pushing;
+        isPulling = pulling;
+    }
+
+    private void OnControllerColliderHit(
+        ControllerColliderHit hit)
     {
         if (hit.collider.CompareTag("MovingPlatform"))
-            currentPlatform = hit.collider.GetComponent<MovingPlatform>();
+        {
+            currentPlatform =
+                hit.collider.GetComponent<MovingPlatform>();
+        }
     }
 }

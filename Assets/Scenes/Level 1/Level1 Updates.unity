@@ -4231,70 +4231,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.0029523815, y: 0.045409836, z: 0.02944774}
   m_Center: {x: -0.0013545586, y: 0.000070531074, z: 0.014829714}
---- !u!1001 &117831397
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -5.82
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.52
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -4.46
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.6211478
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0.78369343
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -103.2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_Name
-      value: gun ONE SCREEN
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1467666580}
-  m_SourcePrefab: {fileID: 100100000, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
 --- !u!1001 &119068419
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9063,14 +8999,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfc42129f2aca40c186501a22fa02296, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemyLaser
+  eye: {fileID: 2119630478}
+  eyeRenderer: {fileID: 0}
+  eyeMaterialIndex: 3
+  idleEyeColor: {r: 0.35, g: 0, b: 0.02, a: 1}
+  chargeEyeColor: {r: 1, g: 0, b: 0.3, a: 1}
+  idleGlowIntensity: 0.7
+  chargeMinGlowIntensity: 2
+  chargeMaxGlowIntensity: 7
+  chargePulseSpeed: 9
   laserDamage: 10
-  fireRate: 1.5
   laserRange: 20
+  windUpDuration: 0.7
+  shotDuration: 0.16
+  cooldownDuration: 1.2
+  maxFireAngle: 35
   laserBeamPrefab: {fileID: 6721162110003479978, guid: 85572214948b64f2194c15d4e17bbda4, type: 3}
   laserDotPrefab: {fileID: 8820555310054832538, guid: 24c79b40a96304fb695d648079b32cf0, type: 3}
-  beamWidth: 0.02
+  aimBeamWidth: 0.008
+  shotBeamWidth: 0.07
   dotLerpSpeed: 15
-  eye: {fileID: 2119630478}
+  chargeParticlesPrefab: {fileID: 0}
+  impactParticlesPrefab: {fileID: 0}
+  muzzleFlashPrefab: {fileID: 0}
+  impactSurfaceOffset: 0.06
+  shotPunchMultiplier: 1.7
+  shotPunchDuration: 0.05
+  audioSource: {fileID: 0}
+  windUpClip: {fileID: 0}
+  shotClip: {fileID: 0}
+  windUpVolume: 0.55
+  shotVolume: 0.8
 --- !u!114 &227542428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9087,6 +9046,7 @@ MonoBehaviour:
   idleChangeInterval: {x: 2, y: 4}
   patrolAnimSpeed: 0.7
   chaseAnimSpeed: 1
+  scanAnimSpeed: 0.38
 --- !u!114 &227542429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9100,25 +9060,49 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemy
   eye: {fileID: 2119630478}
+  laser: {fileID: 227542427}
+  enemyAnimator: {fileID: 227542428}
+  ambientAudio: {fileID: 0}
+  ambientIdlePitch: 1
+  ambientRunPitch: 1.12
+  ambientPitchLerpSpeed: 5
+  player: {fileID: 0}
+  playerStealth: {fileID: 0}
+  detectionRange: 12
+  viewAngle: 90
+  detectionConfirmTime: 0.35
+  closeDetectionRange: 2.25
+  ghostBlocksAllDetection: 1
+  visionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  canMove: 1
+  stationaryUsesIdleOnly: 1
+  patrolSpeed: 1.5
+  chaseSpeed: 3.5
+  stoppingDistance: 5
+  rotationSpeed: 540
+  useStationaryScan: 1
+  scanRotationSpeed: 35
+  minScanAngle: 55
+  maxScanAngle: 120
+  minScanPause: 3.2
+  maxScanPause: 5.5
   patrolPoints:
   - {fileID: 726643322}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  laser: {fileID: 227542427}
-  enemyAnimator: {fileID: 227542428}
-  viewDistance: 12
-  viewAngle: 90
-  attackDistance: 6
-  patrolSpeed: 1.5
-  chaseSpeed: 3.5
-  rotateSpeed: 6
-  waypointReachDistance: 0.4
-  separationRadius: 1.2
-  separationStrength: 2
-  enemyMask:
+  patrolWaitTime: 1
+  patrolPointReachDistance: 0.15
+  loseTargetDelay: 1.2
+  searchDuration: 2.5
+  obstacleMask:
     serializedVersion: 2
     m_Bits: 0
+  obstacleCheckDistance: 1.2
+  avoidanceAngle: 55
+  avoidanceDuration: 0.7
 --- !u!136 &227542430
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -49811,14 +49795,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfc42129f2aca40c186501a22fa02296, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemyLaser
+  eye: {fileID: 303786794}
+  eyeRenderer: {fileID: 0}
+  eyeMaterialIndex: 3
+  idleEyeColor: {r: 0.35, g: 0, b: 0.02, a: 1}
+  chargeEyeColor: {r: 1, g: 0, b: 0.3, a: 1}
+  idleGlowIntensity: 0.7
+  chargeMinGlowIntensity: 2
+  chargeMaxGlowIntensity: 7
+  chargePulseSpeed: 9
   laserDamage: 10
-  fireRate: 1.5
   laserRange: 20
+  windUpDuration: 0.7
+  shotDuration: 0.16
+  cooldownDuration: 1.2
+  maxFireAngle: 35
   laserBeamPrefab: {fileID: 6721162110003479978, guid: 85572214948b64f2194c15d4e17bbda4, type: 3}
   laserDotPrefab: {fileID: 8820555310054832538, guid: 24c79b40a96304fb695d648079b32cf0, type: 3}
-  beamWidth: 0.02
+  aimBeamWidth: 0.008
+  shotBeamWidth: 0.07
   dotLerpSpeed: 15
-  eye: {fileID: 303786794}
+  chargeParticlesPrefab: {fileID: 0}
+  impactParticlesPrefab: {fileID: 0}
+  muzzleFlashPrefab: {fileID: 0}
+  impactSurfaceOffset: 0.06
+  shotPunchMultiplier: 1.7
+  shotPunchDuration: 0.05
+  audioSource: {fileID: 0}
+  windUpClip: {fileID: 0}
+  shotClip: {fileID: 0}
+  windUpVolume: 0.55
+  shotVolume: 0.8
 --- !u!114 &1170043198
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -49835,6 +49842,7 @@ MonoBehaviour:
   idleChangeInterval: {x: 2, y: 4}
   patrolAnimSpeed: 0.7
   chaseAnimSpeed: 1
+  scanAnimSpeed: 0.38
 --- !u!114 &1170043199
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -49848,21 +49856,45 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemy
   eye: {fileID: 303786794}
-  patrolPoints: []
   laser: {fileID: 1170043197}
   enemyAnimator: {fileID: 1170043198}
-  viewDistance: 12
+  ambientAudio: {fileID: 0}
+  ambientIdlePitch: 1
+  ambientRunPitch: 1.12
+  ambientPitchLerpSpeed: 5
+  player: {fileID: 0}
+  playerStealth: {fileID: 0}
+  detectionRange: 12
   viewAngle: 90
-  attackDistance: 6
+  detectionConfirmTime: 0.35
+  closeDetectionRange: 2.25
+  ghostBlocksAllDetection: 1
+  visionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  canMove: 1
+  stationaryUsesIdleOnly: 1
   patrolSpeed: 1.5
   chaseSpeed: 3.5
-  rotateSpeed: 6
-  waypointReachDistance: 0.4
-  separationRadius: 1.2
-  separationStrength: 2
-  enemyMask:
+  stoppingDistance: 5
+  rotationSpeed: 540
+  useStationaryScan: 1
+  scanRotationSpeed: 35
+  minScanAngle: 55
+  maxScanAngle: 120
+  minScanPause: 3.2
+  maxScanPause: 5.5
+  patrolPoints: []
+  patrolWaitTime: 1
+  patrolPointReachDistance: 0.15
+  loseTargetDelay: 1.2
+  searchDuration: 2.5
+  obstacleMask:
     serializedVersion: 2
     m_Bits: 0
+  obstacleCheckDistance: 1.2
+  avoidanceAngle: 55
+  avoidanceDuration: 0.7
 --- !u!95 &1170043200
 Animator:
   serializedVersion: 7
@@ -57758,14 +57790,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfc42129f2aca40c186501a22fa02296, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemyLaser
+  eye: {fileID: 1225480948}
+  eyeRenderer: {fileID: 0}
+  eyeMaterialIndex: 3
+  idleEyeColor: {r: 0.35, g: 0, b: 0.02, a: 1}
+  chargeEyeColor: {r: 1, g: 0, b: 0.3, a: 1}
+  idleGlowIntensity: 0.7
+  chargeMinGlowIntensity: 2
+  chargeMaxGlowIntensity: 7
+  chargePulseSpeed: 9
   laserDamage: 10
-  fireRate: 5
   laserRange: 30
+  windUpDuration: 0.7
+  shotDuration: 0.16
+  cooldownDuration: 1.2
+  maxFireAngle: 35
   laserBeamPrefab: {fileID: 6721162110003479978, guid: 85572214948b64f2194c15d4e17bbda4, type: 3}
   laserDotPrefab: {fileID: 8820555310054832538, guid: 24c79b40a96304fb695d648079b32cf0, type: 3}
-  beamWidth: 0.02
+  aimBeamWidth: 0.008
+  shotBeamWidth: 0.07
   dotLerpSpeed: 15
-  eye: {fileID: 1225480948}
+  chargeParticlesPrefab: {fileID: 0}
+  impactParticlesPrefab: {fileID: 0}
+  muzzleFlashPrefab: {fileID: 0}
+  impactSurfaceOffset: 0.06
+  shotPunchMultiplier: 1.7
+  shotPunchDuration: 0.05
+  audioSource: {fileID: 0}
+  windUpClip: {fileID: 0}
+  shotClip: {fileID: 0}
+  windUpVolume: 0.55
+  shotVolume: 0.8
 --- !u!114 &1312220688
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57782,6 +57837,7 @@ MonoBehaviour:
   idleChangeInterval: {x: 2, y: 4}
   patrolAnimSpeed: 0.7
   chaseAnimSpeed: 1
+  scanAnimSpeed: 0.38
 --- !u!114 &1312220689
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57795,23 +57851,47 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemy
   eye: {fileID: 1225480948}
+  laser: {fileID: 1312220687}
+  enemyAnimator: {fileID: 1312220688}
+  ambientAudio: {fileID: 0}
+  ambientIdlePitch: 1
+  ambientRunPitch: 1.12
+  ambientPitchLerpSpeed: 5
+  player: {fileID: 0}
+  playerStealth: {fileID: 0}
+  detectionRange: 12
+  viewAngle: 90
+  detectionConfirmTime: 0.35
+  closeDetectionRange: 2.25
+  ghostBlocksAllDetection: 1
+  visionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  canMove: 1
+  stationaryUsesIdleOnly: 1
+  patrolSpeed: 1.5
+  chaseSpeed: 5
+  stoppingDistance: 5
+  rotationSpeed: 540
+  useStationaryScan: 1
+  scanRotationSpeed: 35
+  minScanAngle: 55
+  maxScanAngle: 120
+  minScanPause: 3.2
+  maxScanPause: 5.5
   patrolPoints:
   - {fileID: 465309131}
   - {fileID: 798301923}
-  laser: {fileID: 1312220687}
-  enemyAnimator: {fileID: 1312220688}
-  viewDistance: 12
-  viewAngle: 90
-  attackDistance: 6
-  patrolSpeed: 1.5
-  chaseSpeed: 5
-  rotateSpeed: 6
-  waypointReachDistance: 0.4
-  separationRadius: 2
-  separationStrength: 2
-  enemyMask:
+  patrolWaitTime: 1
+  patrolPointReachDistance: 0.15
+  loseTargetDelay: 1.2
+  searchDuration: 2.5
+  obstacleMask:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 0
+  obstacleCheckDistance: 1.2
+  avoidanceAngle: 55
+  avoidanceDuration: 0.7
 --- !u!95 &1312220690
 Animator:
   serializedVersion: 7
@@ -65500,26 +65580,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.0029523815, y: 0.045409836, z: 0.02944774}
   m_Center: {x: -0.0013545586, y: 0.000070531074, z: 0.014829714}
---- !u!1 &1467666579 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 349a40be9e5894a63acdec5b3cab0561, type: 3}
-  m_PrefabInstance: {fileID: 117831397}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1467666580
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1467666579}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 011b7e2a421d946b3ab1a3aab0d7cd18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FloatingPickup
-  floatAmplitude: 0.25
-  floatFrequency: 1.5
-  rotationSpeed: 90
 --- !u!1001 &1468306494
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -72658,14 +72718,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfc42129f2aca40c186501a22fa02296, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemyLaser
+  eye: {fileID: 481872846}
+  eyeRenderer: {fileID: 0}
+  eyeMaterialIndex: 3
+  idleEyeColor: {r: 0.35, g: 0, b: 0.02, a: 1}
+  chargeEyeColor: {r: 1, g: 0, b: 0.3, a: 1}
+  idleGlowIntensity: 0.7
+  chargeMinGlowIntensity: 2
+  chargeMaxGlowIntensity: 7
+  chargePulseSpeed: 9
   laserDamage: 10
-  fireRate: 5
   laserRange: 30
+  windUpDuration: 0.7
+  shotDuration: 0.16
+  cooldownDuration: 1.2
+  maxFireAngle: 35
   laserBeamPrefab: {fileID: 6721162110003479978, guid: 85572214948b64f2194c15d4e17bbda4, type: 3}
   laserDotPrefab: {fileID: 8820555310054832538, guid: 24c79b40a96304fb695d648079b32cf0, type: 3}
-  beamWidth: 0.02
+  aimBeamWidth: 0.008
+  shotBeamWidth: 0.07
   dotLerpSpeed: 15
-  eye: {fileID: 481872846}
+  chargeParticlesPrefab: {fileID: 0}
+  impactParticlesPrefab: {fileID: 0}
+  muzzleFlashPrefab: {fileID: 0}
+  impactSurfaceOffset: 0.06
+  shotPunchMultiplier: 1.7
+  shotPunchDuration: 0.05
+  audioSource: {fileID: 0}
+  windUpClip: {fileID: 0}
+  shotClip: {fileID: 0}
+  windUpVolume: 0.55
+  shotVolume: 0.8
 --- !u!114 &1626978381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -72682,6 +72765,7 @@ MonoBehaviour:
   idleChangeInterval: {x: 2, y: 4}
   patrolAnimSpeed: 0.7
   chaseAnimSpeed: 1
+  scanAnimSpeed: 0.38
 --- !u!114 &1626978382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -72695,21 +72779,45 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemy
   eye: {fileID: 481872846}
-  patrolPoints: []
   laser: {fileID: 1626978380}
   enemyAnimator: {fileID: 1626978381}
-  viewDistance: 12
+  ambientAudio: {fileID: 0}
+  ambientIdlePitch: 1
+  ambientRunPitch: 1.12
+  ambientPitchLerpSpeed: 5
+  player: {fileID: 0}
+  playerStealth: {fileID: 0}
+  detectionRange: 12
   viewAngle: 90
-  attackDistance: 6
+  detectionConfirmTime: 0.35
+  closeDetectionRange: 2.25
+  ghostBlocksAllDetection: 1
+  visionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  canMove: 1
+  stationaryUsesIdleOnly: 1
   patrolSpeed: 1.5
   chaseSpeed: 5
-  rotateSpeed: 6
-  waypointReachDistance: 0.4
-  separationRadius: 2
-  separationStrength: 2
-  enemyMask:
+  stoppingDistance: 5
+  rotationSpeed: 540
+  useStationaryScan: 1
+  scanRotationSpeed: 35
+  minScanAngle: 55
+  maxScanAngle: 120
+  minScanPause: 3.2
+  maxScanPause: 5.5
+  patrolPoints: []
+  patrolWaitTime: 1
+  patrolPointReachDistance: 0.15
+  loseTargetDelay: 1.2
+  searchDuration: 2.5
+  obstacleMask:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 0
+  obstacleCheckDistance: 1.2
+  avoidanceAngle: 55
+  avoidanceDuration: 0.7
 --- !u!95 &1626978383
 Animator:
   serializedVersion: 7
@@ -77386,14 +77494,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfc42129f2aca40c186501a22fa02296, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemyLaser
+  eye: {fileID: 2085663930}
+  eyeRenderer: {fileID: 0}
+  eyeMaterialIndex: 3
+  idleEyeColor: {r: 0.35, g: 0, b: 0.02, a: 1}
+  chargeEyeColor: {r: 1, g: 0, b: 0.3, a: 1}
+  idleGlowIntensity: 0.7
+  chargeMinGlowIntensity: 2
+  chargeMaxGlowIntensity: 7
+  chargePulseSpeed: 9
   laserDamage: 10
-  fireRate: 5
   laserRange: 30
+  windUpDuration: 0.7
+  shotDuration: 0.16
+  cooldownDuration: 1.2
+  maxFireAngle: 35
   laserBeamPrefab: {fileID: 6721162110003479978, guid: 85572214948b64f2194c15d4e17bbda4, type: 3}
   laserDotPrefab: {fileID: 8820555310054832538, guid: 24c79b40a96304fb695d648079b32cf0, type: 3}
-  beamWidth: 0.02
+  aimBeamWidth: 0.008
+  shotBeamWidth: 0.07
   dotLerpSpeed: 15
-  eye: {fileID: 2085663930}
+  chargeParticlesPrefab: {fileID: 0}
+  impactParticlesPrefab: {fileID: 0}
+  muzzleFlashPrefab: {fileID: 0}
+  impactSurfaceOffset: 0.06
+  shotPunchMultiplier: 1.7
+  shotPunchDuration: 0.05
+  audioSource: {fileID: 0}
+  windUpClip: {fileID: 0}
+  shotClip: {fileID: 0}
+  windUpVolume: 0.55
+  shotVolume: 0.8
 --- !u!114 &1724551596
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -77410,6 +77541,7 @@ MonoBehaviour:
   idleChangeInterval: {x: 2, y: 4}
   patrolAnimSpeed: 0.7
   chaseAnimSpeed: 1
+  scanAnimSpeed: 0.38
 --- !u!114 &1724551597
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -77423,23 +77555,47 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraEnemy
   eye: {fileID: 2085663930}
+  laser: {fileID: 1724551595}
+  enemyAnimator: {fileID: 1724551596}
+  ambientAudio: {fileID: 0}
+  ambientIdlePitch: 1
+  ambientRunPitch: 1.12
+  ambientPitchLerpSpeed: 5
+  player: {fileID: 0}
+  playerStealth: {fileID: 0}
+  detectionRange: 12
+  viewAngle: 90
+  detectionConfirmTime: 0.35
+  closeDetectionRange: 2.25
+  ghostBlocksAllDetection: 1
+  visionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  canMove: 1
+  stationaryUsesIdleOnly: 1
+  patrolSpeed: 1.5
+  chaseSpeed: 5
+  stoppingDistance: 5
+  rotationSpeed: 540
+  useStationaryScan: 1
+  scanRotationSpeed: 35
+  minScanAngle: 55
+  maxScanAngle: 120
+  minScanPause: 3.2
+  maxScanPause: 5.5
   patrolPoints:
   - {fileID: 726643322}
   - {fileID: 96078316}
-  laser: {fileID: 1724551595}
-  enemyAnimator: {fileID: 1724551596}
-  viewDistance: 12
-  viewAngle: 90
-  attackDistance: 6
-  patrolSpeed: 1.5
-  chaseSpeed: 5
-  rotateSpeed: 6
-  waypointReachDistance: 0.4
-  separationRadius: 2
-  separationStrength: 2
-  enemyMask:
+  patrolWaitTime: 1
+  patrolPointReachDistance: 0.15
+  loseTargetDelay: 1.2
+  searchDuration: 2.5
+  obstacleMask:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 0
+  obstacleCheckDistance: 1.2
+  avoidanceAngle: 55
+  avoidanceDuration: 0.7
 --- !u!95 &1724551598
 Animator:
   serializedVersion: 7
@@ -97742,7 +97898,7 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2046240391}
   m_SourcePrefab: {fileID: 100100000, guid: 36bffd867aec148c2a4d0ce4d12a7e21, type: 3}
---- !u!1001 &5618817870482430314
+--- !u!1001 &7085531782314779297
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -97750,55 +97906,55 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 876286034059100111, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
+      propertyPath: m_Name
+      value: Gun_Collectable_Item
+      objectReference: {fileID: 0}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -5.918715
+      value: -5.53363
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.4559989
+      value: 1.69371
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.4250455
+      value: -4.9762
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 230411413114089328, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+    - target: {fileID: 1244955921259010483, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1960338626210275730, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
-      propertyPath: m_Name
-      value: CollectableEffect
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 7fc1d2b322ce14ae5bc1757b87e6f9c4, type: 3}
+  m_SourcePrefab: {fileID: 100100000, guid: 39b9f947736174a199bacfd967f67c9e, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -97838,10 +97994,9 @@ SceneRoots:
   - {fileID: 1129527260}
   - {fileID: 1450947308}
   - {fileID: 1725244399}
-  - {fileID: 117831397}
   - {fileID: 633981836}
-  - {fileID: 5618817870482430314}
   - {fileID: 1030723317}
   - {fileID: 695676234}
   - {fileID: 442211745}
   - {fileID: 1617409357}
+  - {fileID: 7085531782314779297}

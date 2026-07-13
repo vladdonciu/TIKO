@@ -27,9 +27,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2442909508189275429}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.004481186, y: 0.0000029802322, z: 0.0008637011, w: 0.9999896}
-  m_LocalPosition: {x: 0, y: 0.0034814372, z: -0.0035336728}
-  m_LocalScale: {x: 0.0062327227, y: 0.0059947297, z: 0.01}
+  m_LocalRotation: {x: 0.0044812015, y: 0.0000030696388, z: 0.0008636749, w: 0.99998957}
+  m_LocalPosition: {x: 0, y: 0.0034814407, z: -0.0035336618}
+  m_LocalScale: {x: 0.006232724, y: 0.0059947288, z: 0.010000003}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2503046885291318141}
@@ -252,7 +252,6 @@ MonoBehaviour:
   wheelRadius: 0.2
   wheelSpinMultiplier: 1
   wheelLocalAxis: {x: 1, y: 0, z: 0}
-  wheelCounterActParentScale: 1
   debugParams: 1
   crouchReleaseFailsafe: 1
   enableDebugStateKeys: 1

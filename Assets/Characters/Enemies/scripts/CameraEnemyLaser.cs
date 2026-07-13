@@ -12,6 +12,7 @@ public class CameraEnemyLaser : MonoBehaviour
 
     [Tooltip("Index-ul slotului de material ocupat de M_SentryChargeGlow.")]
     [SerializeField] private int eyeMaterialIndex = 3;
+
     [SerializeField] private Color idleEyeColor =
         new Color(0.35f, 0f, 0.02f, 1f);
 
@@ -19,11 +20,8 @@ public class CameraEnemyLaser : MonoBehaviour
         new Color(1f, 0f, 0.3f, 1f);
 
     [SerializeField] private float idleGlowIntensity = 0.7f;
-
     [SerializeField] private float chargeMinGlowIntensity = 2f;
-
     [SerializeField] private float chargeMaxGlowIntensity = 7f;
-
     [SerializeField] private float chargePulseSpeed = 9f;
 
     [Header("Damage")]
@@ -50,11 +48,11 @@ public class CameraEnemyLaser : MonoBehaviour
     [Tooltip("Prefab cu Particle System pentru energia care intră în ochi la charge.")]
     [SerializeField] private ParticleSystem chargeParticlesPrefab;
 
-    [Header("Shot VFX")]
-    [Tooltip("Prefab Particle System pentru impactul laserului.")]
+    [Header("Shot VFX Pool")]
+    [Tooltip("Doar referință pentru Inspector. Pool-ul global folosește propriile prefabs.")]
     [SerializeField] private ParticleSystem impactParticlesPrefab;
 
-    [Tooltip("Prefab Particle System pentru flash-ul de la ochi.")]
+    [Tooltip("Doar referință pentru Inspector. Pool-ul global folosește propriile prefabs.")]
     [SerializeField] private ParticleSystem muzzleFlashPrefab;
 
     [Tooltip("Distanța cu care impactul este mutat în afara colliderului.")]
@@ -100,11 +98,7 @@ public class CameraEnemyLaser : MonoBehaviour
 
     private GameObject beamInstance;
     private GameObject dotInstance;
-
     private ParticleSystem chargeParticlesInstance;
-    private ParticleSystem impactParticlesInstance;
-    private ParticleSystem muzzleFlashInstance;
-
     private Material eyeMaterialInstance;
 
     private static readonly int GlowColorId =
@@ -131,19 +125,20 @@ public class CameraEnemyLaser : MonoBehaviour
             audioSource = GetComponent<AudioSource>();
 
         FindPlayer();
-
         SetupEyeMaterial();
         SetEyeIdle();
 
         if (laserBeamPrefab != null)
         {
             beamInstance = Instantiate(laserBeamPrefab);
+            beamInstance.name = "EnemyLaserBeam_Local";
             beamInstance.SetActive(false);
         }
 
         if (laserDotPrefab != null)
         {
             dotInstance = Instantiate(laserDotPrefab);
+            dotInstance.name = "EnemyLaserDot_Local";
             dotInstance.SetActive(false);
         }
 
@@ -156,27 +151,12 @@ public class CameraEnemyLaser : MonoBehaviour
                 eye
             );
 
+            chargeParticlesInstance.name = "EnemyLaserCharge_Local";
             chargeParticlesInstance.transform.localPosition = Vector3.zero;
             chargeParticlesInstance.transform.localRotation =
                 Quaternion.identity;
 
             chargeParticlesInstance.gameObject.SetActive(false);
-        }
-
-        if (impactParticlesPrefab != null)
-        {
-            impactParticlesInstance =
-                Instantiate(impactParticlesPrefab);
-
-            impactParticlesInstance.gameObject.SetActive(false);
-        }
-
-        if (muzzleFlashPrefab != null)
-        {
-            muzzleFlashInstance =
-                Instantiate(muzzleFlashPrefab);
-
-            muzzleFlashInstance.gameObject.SetActive(false);
         }
     }
 
@@ -262,16 +242,14 @@ public class CameraEnemyLaser : MonoBehaviour
 
         eyeMaterialInstance = materials[eyeMaterialIndex];
     }
+
     private void SetEyeIdle()
     {
         if (eyeMaterialInstance == null)
             return;
 
         if (eyeMaterialInstance.HasProperty(GlowColorId))
-            eyeMaterialInstance.SetColor(
-                GlowColorId,
-                idleEyeColor
-            );
+            eyeMaterialInstance.SetColor(GlowColorId, idleEyeColor);
 
         if (eyeMaterialInstance.HasProperty(MinIntensityId))
             eyeMaterialInstance.SetFloat(
@@ -286,16 +264,10 @@ public class CameraEnemyLaser : MonoBehaviour
             );
 
         if (eyeMaterialInstance.HasProperty(PulseSpeedId))
-            eyeMaterialInstance.SetFloat(
-                PulseSpeedId,
-                0f
-            );
+            eyeMaterialInstance.SetFloat(PulseSpeedId, 0f);
 
         if (eyeMaterialInstance.HasProperty(AlphaId))
-            eyeMaterialInstance.SetFloat(
-                AlphaId,
-                1f
-            );
+            eyeMaterialInstance.SetFloat(AlphaId, 1f);
     }
 
     private void SetEyeCharging()
@@ -304,10 +276,7 @@ public class CameraEnemyLaser : MonoBehaviour
             return;
 
         if (eyeMaterialInstance.HasProperty(GlowColorId))
-            eyeMaterialInstance.SetColor(
-                GlowColorId,
-                chargeEyeColor
-            );
+            eyeMaterialInstance.SetColor(GlowColorId, chargeEyeColor);
 
         if (eyeMaterialInstance.HasProperty(MinIntensityId))
             eyeMaterialInstance.SetFloat(
@@ -328,10 +297,7 @@ public class CameraEnemyLaser : MonoBehaviour
             );
 
         if (eyeMaterialInstance.HasProperty(AlphaId))
-            eyeMaterialInstance.SetFloat(
-                AlphaId,
-                1f
-            );
+            eyeMaterialInstance.SetFloat(AlphaId, 1f);
     }
 
     private void SetEyeShotFlash()
@@ -342,10 +308,7 @@ public class CameraEnemyLaser : MonoBehaviour
         float shotIntensity = chargeMaxGlowIntensity * 1.5f;
 
         if (eyeMaterialInstance.HasProperty(GlowColorId))
-            eyeMaterialInstance.SetColor(
-                GlowColorId,
-                Color.white
-            );
+            eyeMaterialInstance.SetColor(GlowColorId, Color.white);
 
         if (eyeMaterialInstance.HasProperty(MinIntensityId))
             eyeMaterialInstance.SetFloat(
@@ -360,16 +323,10 @@ public class CameraEnemyLaser : MonoBehaviour
             );
 
         if (eyeMaterialInstance.HasProperty(PulseSpeedId))
-            eyeMaterialInstance.SetFloat(
-                PulseSpeedId,
-                0f
-            );
+            eyeMaterialInstance.SetFloat(PulseSpeedId, 0f);
 
         if (eyeMaterialInstance.HasProperty(AlphaId))
-            eyeMaterialInstance.SetFloat(
-                AlphaId,
-                1f
-            );
+            eyeMaterialInstance.SetFloat(AlphaId, 1f);
     }
 
     private void StartWindUp()
@@ -610,44 +567,26 @@ public class CameraEnemyLaser : MonoBehaviour
 
     private void PlayMuzzleFlash()
     {
-        if (muzzleFlashInstance == null || eye == null)
+        if (EnemyLaserVfxPool.Instance == null || eye == null)
             return;
 
-        muzzleFlashInstance.gameObject.SetActive(true);
-
-        muzzleFlashInstance.transform.SetPositionAndRotation(
+        EnemyLaserVfxPool.Instance.PlayMuzzleFlash(
             eye.position,
             eye.rotation
         );
-
-        muzzleFlashInstance.Stop(
-            true,
-            ParticleSystemStopBehavior.StopEmittingAndClear
-        );
-
-        muzzleFlashInstance.Play(true);
     }
 
     private void PlayImpactParticles(
         Vector3 position,
         Quaternion rotation)
     {
-        if (impactParticlesInstance == null)
+        if (EnemyLaserVfxPool.Instance == null)
             return;
 
-        impactParticlesInstance.gameObject.SetActive(true);
-
-        impactParticlesInstance.transform.SetPositionAndRotation(
+        EnemyLaserVfxPool.Instance.PlayImpact(
             position,
             rotation
         );
-
-        impactParticlesInstance.Stop(
-            true,
-            ParticleSystemStopBehavior.StopEmittingAndClear
-        );
-
-        impactParticlesInstance.Play(true);
     }
 
     private void StopAttack()
@@ -673,22 +612,6 @@ public class CameraEnemyLaser : MonoBehaviour
     private void OnDisable()
     {
         StopAttack();
-
-        if (impactParticlesInstance != null)
-        {
-            impactParticlesInstance.Stop(
-                true,
-                ParticleSystemStopBehavior.StopEmittingAndClear
-            );
-        }
-
-        if (muzzleFlashInstance != null)
-        {
-            muzzleFlashInstance.Stop(
-                true,
-                ParticleSystemStopBehavior.StopEmittingAndClear
-            );
-        }
     }
 
     private void OnDrawGizmosSelected()

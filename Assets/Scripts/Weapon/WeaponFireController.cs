@@ -3,7 +3,6 @@ using UnityEngine;
 public class WeaponFireController : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private Transform firePoint;
     [SerializeField] private WeaponRecoil recoil;
     [SerializeField] private ParticleSystem muzzleFlash;
@@ -25,6 +24,12 @@ public class WeaponFireController : MonoBehaviour
     [SerializeField] private HeatGaugeController heatGauge;
 
     private float nextFireTime;
+    private Collider[] selfColliders;
+
+    private void Awake()
+    {
+        selfColliders = GetComponentsInChildren<Collider>();
+    }
 
     private void Update()
     {
@@ -47,12 +52,24 @@ public class WeaponFireController : MonoBehaviour
 
     private void Fire()
     {
-        GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
-        Rigidbody rb = bullet.GetComponent<Rigidbody>();
-        if (rb != null) rb.linearVelocity = firePoint.forward * bulletSpeed;
+        GameObject bullet = BulletPool.Instance.GetBullet();
 
-        if (recoil != null) recoil.FireKick();
-        if (muzzleFlash != null) muzzleFlash.Play();
+        BulletPool.Instance.LaunchBullet(
+            bullet,
+            firePoint.position,
+            firePoint.rotation,
+            firePoint.forward * bulletSpeed
+        );
+
+        ProjectileBullet projectile = bullet.GetComponent<ProjectileBullet>();
+        if (projectile != null)
+            projectile.ResetBullet();
+
+        if (recoil != null)
+            recoil.FireKick();
+
+        if (muzzleFlash != null)
+            muzzleFlash.Play();
 
         if (audioSource != null && fireClip != null)
         {
@@ -60,6 +77,7 @@ public class WeaponFireController : MonoBehaviour
             audioSource.PlayOneShot(fireClip);
         }
 
-        if (heatGauge != null) heatGauge.AddHeat();
+        if (heatGauge != null)
+            heatGauge.AddHeat();
     }
 }
