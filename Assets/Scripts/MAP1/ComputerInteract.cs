@@ -78,7 +78,7 @@ public class ComputerInteract : MonoBehaviour
 
             GUI.Label(
                 new Rect(Screen.width / 2 - 150, Screen.height / 2 + 50, 300, 35),
-                "[E] Activeaza calculatorul",
+                "[E] Activate the computer",
                 style
             );
         }

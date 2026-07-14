@@ -71,6 +71,16 @@ public class TikoHealth : MonoBehaviour
             Die();
     }
 
+    public void Kill()
+    {
+        if (isDead)
+            return;
+
+        currentHealth = 0f;
+        RefreshUI();
+        Die();
+    }
+
     public void Heal(float amount)
     {
         if (isDead || amount <= 0f)

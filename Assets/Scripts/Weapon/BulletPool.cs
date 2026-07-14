@@ -40,12 +40,15 @@ public class BulletPool : MonoBehaviour
         Rigidbody rb = bullet.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.useGravity = false;
-            rb.isKinematic = true;
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            // Setăm velocity ÎNAINTE de a face body-ul kinematic.
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
+
+            rb.useGravity = false;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+            rb.isKinematic = true;
         }
 
         Collider bulletCollider = bullet.GetComponent<Collider>();
@@ -74,9 +77,9 @@ public class BulletPool : MonoBehaviour
         Rigidbody rb = bullet.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.isKinematic = true;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            // Rigidbody-ul vine deja din pool cu isKinematic = true
+            // (setat la ReturnBullet), deci velocity e deja zero.
+            // Nu mai setăm velocity aici cât timp e kinematic.
         }
 
         bullet.SetActive(true);
@@ -98,11 +101,13 @@ public class BulletPool : MonoBehaviour
 
         rb.position = position;
         rb.rotation = rotation;
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
+
+        // Devine dinamic ÎNAINTE de a seta velocity.
         rb.isKinematic = false;
         rb.WakeUp();
+
         rb.linearVelocity = velocity;
+        rb.angularVelocity = Vector3.zero;
     }
 
     public void ReturnBullet(GameObject bullet)
@@ -113,8 +118,10 @@ public class BulletPool : MonoBehaviour
         Rigidbody rb = bullet.GetComponent<Rigidbody>();
         if (rb != null)
         {
+            // Setăm velocity ÎNAINTE de a face body-ul kinematic.
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
+
             rb.isKinematic = true;
             rb.Sleep();
         }
