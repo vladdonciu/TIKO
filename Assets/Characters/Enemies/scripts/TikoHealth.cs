@@ -19,6 +19,13 @@ public class TikoHealth : MonoBehaviour
     [SerializeField] private MonoBehaviour playerController;
     [SerializeField] private float deathAnimationDuration = 2.1f;
 
+    [Header("Death Fall")]
+    [SerializeField] private float deathFallGravity = -25f;
+    [SerializeField] private float deathFallMaxSpeed = -30f;
+
+    [Header("Respawn Safety")]
+    [SerializeField] private float respawnInvulnerabilityDuration = 0.5f;
+
     [Header("Damage Feedback")]
     [SerializeField] private Image damageFlash;
     [SerializeField] private float flashPeakAlpha = 0.20f;
@@ -28,6 +35,7 @@ public class TikoHealth : MonoBehaviour
     private Coroutine flashRoutine;
     private Transform currentCheckpoint;
     private bool isDead;
+    private bool isInvulnerable;
 
     public bool IsDead => isDead;
     public float CurrentHealth => currentHealth;
@@ -57,7 +65,7 @@ public class TikoHealth : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
-        if (isDead || damage <= 0f)
+        if (isDead || isInvulnerable || damage <= 0f)
             return;
 
         currentHealth = Mathf.Max(0f, currentHealth - damage);
@@ -73,7 +81,7 @@ public class TikoHealth : MonoBehaviour
 
     public void Kill()
     {
-        if (isDead)
+        if (isDead || isInvulnerable)
             return;
 
         currentHealth = 0f;
@@ -123,7 +131,26 @@ public class TikoHealth : MonoBehaviour
 
     private IEnumerator DeathRoutine()
     {
-        yield return new WaitForSeconds(deathAnimationDuration);
+        float fallVelocity = 0f;
+        float timer = 0f;
+
+        while (timer < deathAnimationDuration)
+        {
+            timer += Time.deltaTime;
+
+            if (characterController != null && characterController.enabled)
+            {
+                fallVelocity = Mathf.Max(
+                    fallVelocity + deathFallGravity * Time.deltaTime,
+                    deathFallMaxSpeed
+                );
+
+                Vector3 fallMotion = new Vector3(0f, fallVelocity, 0f) * Time.deltaTime;
+                characterController.Move(fallMotion);
+            }
+
+            yield return null;
+        }
 
         if (characterController != null)
             characterController.enabled = false;
@@ -144,6 +171,8 @@ public class TikoHealth : MonoBehaviour
             animator.Update(0f);
         }
 
+        isInvulnerable = true;
+
         if (characterController != null)
             characterController.enabled = true;
 
@@ -154,6 +183,10 @@ public class TikoHealth : MonoBehaviour
             playerController.enabled = true;
 
         isDead = false;
+
+        yield return new WaitForSeconds(respawnInvulnerabilityDuration);
+
+        isInvulnerable = false;
     }
 
     private void PlayDamageFeedback()

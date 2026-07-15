@@ -37,10 +37,14 @@ public class UIButton : MonoBehaviour,
             normalSprite = img.sprite;
     }
 
-    void Start()
+    void OnEnable()
     {
-        // Canvas Scaler termină după primul frame
-        // folosim LateUpdate o singură dată să capturăm scala corectă
+        ResetVisualState();
+    }
+
+    void OnDisable()
+    {
+        ResetVisualState();
     }
 
     void LateUpdate()
@@ -54,7 +58,16 @@ public class UIButton : MonoBehaviour,
 
         if (enableScale)
             transform.localScale = Vector3.Lerp(
-                transform.localScale, targetScale, scaleSpeed * Time.deltaTime);
+                transform.localScale, targetScale, scaleSpeed * Time.unscaledDeltaTime);
+    }
+
+    public void ResetVisualState()
+    {
+        if (img != null && normalSprite != null)
+            img.sprite = normalSprite;
+
+        if (enableScale && initialized)
+            targetScale = initialScale;
     }
 
     public void OnPointerEnter(PointerEventData e)

@@ -57,15 +57,15 @@ public class CameraController : MonoBehaviour
     private void LateUpdate()
     {
         if (isTransitioning) return;
+        if (PauseManager.IsPaused) return;
+        if (Time.deltaTime <= 0f) return;
 
-        // Full lock
         if (lockX && lockY && lockZ)
         {
             transform.position = new Vector3(fixedX, fixedY, fixedZ);
             return;
         }
 
-        // Look Ahead
         Vector3 velocity = (player.position - lastPlayerPos) / Time.deltaTime;
         lastPlayerPos = player.position;
 
@@ -78,31 +78,25 @@ public class CameraController : MonoBehaviour
 
         Vector3 desired = player.position + offset + lookAheadOffset;
 
-        // Dead Zone
         Vector3 diff = desired - transform.position;
         if (Mathf.Abs(diff.x) < deadZoneX) desired.x = transform.position.x;
         if (Mathf.Abs(diff.y) < deadZoneY) desired.y = transform.position.y;
 
-        // Lock individuale
         if (lockX) desired.x = fixedX;
         if (lockY) desired.y = fixedY;
         if (lockZ) desired.z = fixedZ;
 
-        // Clamp
         if (!lockX) desired.x = Mathf.Clamp(desired.x, minBounds.x, maxBounds.x);
         if (!lockY) desired.y = Mathf.Clamp(desired.y, minBounds.y, maxBounds.y);
 
         transform.position = Vector3.Lerp(transform.position, desired,
             smoothSpeed * Time.deltaTime);
 
-        // Failsafe
         Vector3 p = transform.position;
         if (!lockX) p.x = Mathf.Clamp(p.x, minBounds.x, maxBounds.x);
         if (!lockY) p.y = Mathf.Clamp(p.y, minBounds.y, maxBounds.y);
         transform.position = p;
     }
-
-    // ─── API PUBLIC ───────────────────────────────────────────
 
     public void ApplyZone(CameraZoneSettings s, bool instant,
                            Vector2 bMin, Vector2 bMax,
@@ -111,7 +105,6 @@ public class CameraController : MonoBehaviour
         StopAllCoroutines();
         isTransitioning = false;
 
-        // Seteaza TOTUL inainte de orice altceva
         minBounds = bMin;
         maxBounds = bMax;
         fixedX    = fx;
@@ -158,8 +151,6 @@ public class CameraController : MonoBehaviour
     public float GetFixedZ() => fixedZ;
     public void SetBounds(Vector2 min, Vector2 max) { minBounds = min; maxBounds = max; }
 
-    // ─── TRANZITIE ────────────────────────────────────────────
-
     private IEnumerator DoTransition(CameraZoneSettings s)
     {
         isTransitioning = true;
@@ -174,9 +165,8 @@ public class CameraController : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / transitionDuration);
-            t = t * t * (3f - 2f * t); // smoothstep
+            t = t * t * (3f - 2f * t);
 
-            // Target calculat cu valorile DEJA setate (fixedX/Y/Z corecte)
             Vector3 endPos = GetTargetPosition(s);
 
             transform.position = Vector3.Lerp(startPos, endPos, t);
@@ -221,6 +211,5 @@ public class CameraController : MonoBehaviour
         lastPlayerPos     = player.position;
         transform.rotation = Quaternion.Euler(s.cameraRotation);
         if (mainCamera) mainCamera.fieldOfView = s.fieldOfView;
-        // fixedX/Y/Z NU le resetam — sunt deja corecte din ApplyZone()
     }
 }
